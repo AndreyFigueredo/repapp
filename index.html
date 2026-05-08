@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Israel Representação</title>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #1e3a5f; --primary-light: #2d5a9e; --accent: #f97316;
+  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+  --bg: #f0f4f8; --card: #ffffff; --text: #1e293b;
+  --text-muted: #64748b; --border: #e2e8f0; --nav-height: 64px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+/* HEADER */
+.app-header { background: var(--primary); color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+.header-title { font-size: 17px; font-weight: 700; }
+.header-date { font-size: 11px; opacity: 0.75; margin-top: 1px; }
+
+/* MAIN */
+.main-content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: calc(var(--nav-height) + 20px); }
+
+/* BOTTOM NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--card); border-top: 1px solid var(--border); display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: var(--text-muted); font-size: 10px; font-weight: 600; border: none; background: none; padding: 6px 0; transition: color 0.2s; position: relative; }
+.nav-item.active { color: var(--primary); }
+.nav-icon { font-size: 20px; line-height: 1; }
+.nav-badge { position: absolute; top: 6px; right: calc(50% - 20px); background: var(--danger); color: white; border-radius: 8px; font-size: 9px; font-weight: 700; padding: 1px 5px; display: none; }
+
+/* SCREENS */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* CARDS */
+.card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 12px; }
+
+/* STAT GRID */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stat-card { background: var(--card); border-radius: 12px; padding: 14px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; }
+.stat-value { font-size: 30px; font-weight: 800; color: var(--primary); line-height: 1; }
+.stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+.stat-card.c-accent .stat-value { color: var(--accent); }
+.stat-card.c-success .stat-value { color: var(--success); }
+.stat-card.c-danger .stat-value { color: var(--danger); }
+.stat-card.c-warning .stat-value { color: var(--warning); }
+
+/* ACTION BUTTONS */
+.action-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 17px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 10px; transition: transform 0.1s, opacity 0.2s; font-family: inherit; }
+.action-btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--primary); color: white; }
+.btn-accent  { background: var(--accent);  color: white; }
+
+/* ALERT */
+.alert-card { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+.alert-title { font-size: 12px; font-weight: 800; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.alert-item { font-size: 13px; color: var(--text); padding: 7px 0; border-bottom: 1px solid #fed7aa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.alert-item:last-child { border-bottom: none; }
+
+/* LIST */
+.list-item { background: var(--card); border-radius: 10px; padding: 13px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); cursor: pointer; transition: transform 0.1s; }
+.list-item:active { transform: scale(0.985); }
+.list-item-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+.list-item-body { flex: 1; min-width: 0; }
+.list-item-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-item-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.list-item-right { text-align: right; flex-shrink: 0; }
+
+/* BADGES */
+.badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.badge-ok       { background: #dcfce7; color: #16a34a; }
+.badge-late     { background: #fee2e2; color: #dc2626; }
+.badge-enviado  { background: #fef9c3; color: #ca8a04; }
+.badge-aprovado { background: #dcfce7; color: #16a34a; }
+.badge-recusado { background: #fee2e2; color: #dc2626; }
+.badge-faturado { background: #dbeafe; color: #2563eb; }
+
+/* SEARCH */
+.search-bar { display: flex; align-items: center; background: var(--card); border-radius: 10px; padding: 11px 14px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); gap: 10px; }
+.search-input { flex: 1; border: none; outline: none; font-size: 14px; color: var(--text); background: transparent; font-family: inherit; }
+
+/* SECTION TITLE */
+.section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.6px; margin-bottom: 8px; margin-top: 4px; }
+
+/* FAB */
+.fab { position: fixed; bottom: calc(var(--nav-height) + 16px); right: 18px; width: 54px; height: 54px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 26px; cursor: pointer; box-shadow: 0 4px 14px rgba(30,58,95,0.45); display: none; align-items: center; justify-content: center; z-index: 90; transition: transform 0.1s; }
+.fab:active { transform: scale(0.92); }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal-sheet { background: white; border-radius: 20px 20px 0 0; width: 100%; max-width: 640px; max-height: 92vh; overflow-y: auto; padding: 20px; animation: slideUp 0.22s ease; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.modal-title { font-size: 17px; font-weight: 700; }
+.modal-close { width: 30px; height: 30px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+
+/* FORM */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
+.form-control { width: 100%; padding: 13px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; color: var(--text); outline: none; transition: border-color 0.2s; background: white; font-family: inherit; }
+.form-control:focus { border-color: var(--primary); }
+select.form-control { -webkit-appearance: none; appearance: none; }
+.form-check { display: flex; align-items: center; gap: 10px; padding: 13px 14px; background: var(--bg); border-radius: 10px; cursor: pointer; user-select: none; }
+.form-check input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary); }
+.form-check label { font-size: 15px; font-weight: 500; cursor: pointer; }
+.btn-submit { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 4px; font-family: inherit; transition: opacity 0.2s; }
+.btn-submit:active { opacity: 0.85; }
+
+/* TABS */
+.tabs { display: flex; background: var(--card); border-radius: 10px; padding: 4px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.tab { flex: 1; padding: 9px 4px; border: none; background: none; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.2s; font-family: inherit; }
+.tab.active { background: var(--primary); color: white; }
+
+/* EMPTY */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 46px; margin-bottom: 10px; }
+.empty-text { font-size: 14px; font-weight: 500; }
+
+/* STATUS BUTTONS */
+.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.status-btn { padding: 14px 10px; border-radius: 10px; border: 2px solid transparent; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+.status-btn:active { transform: scale(0.96); }
+.status-btn.enviado  { background: #fef9c3; color: #ca8a04; border-color: #fde68a; }
+.status-btn.aprovado { background: #dcfce7; color: #16a34a; border-color: #86efac; }
+.status-btn.recusado { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+.status-btn.faturado { background: #dbeafe; color: #2563eb; border-color: #93c5fd; }
+.status-btn.selected { border-width: 3px; box-shadow: 0 0 0 3px rgba(0,0,0,0.08); }
+
+/* DETAILS */
+.detail-row { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.detail-cell { flex: 1; min-width: 80px; }
+.detail-label { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+.detail-value { font-size: 14px; color: var(--text); margin-top: 2px; font-weight: 500; }
+.history-item { padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.history-item:last-child { border-bottom: none; }
+.btn-danger { width: 100%; padding: 13px; background: #fee2e2; color: #dc2626; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; font-family: inherit; }
+.whatsapp-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; background: #25d366; color: white; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; font-family: inherit; }
+
+/* PROGRESS */
+.progress-bar { background: var(--bg); border-radius: 4px; height: 8px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+/* SYNC INDICATOR */
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.sync-dot.ok     { background: #22c55e; }
+.sync-dot.sync   { background: #f59e0b; animation: pulse 1s infinite; }
+.sync-dot.off    { background: #ef4444; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* SETUP SCREEN */
+.setup-wrapper { max-width: 560px; margin: 0 auto; }
+.setup-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); margin-bottom: 16px; }
+.setup-step { display: flex; gap: 14px; margin-bottom: 16px; align-items: flex-start; }
+.step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: white; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.step-text { font-size: 14px; line-height: 1.5; color: var(--text); }
+.step-text strong { color: var(--primary); }
+.step-text a { color: var(--accent); font-weight: 700; }
+.config-paste { width: 100%; padding: 14px; border: 2px dashed var(--border); border-radius: 10px; font-size: 12px; font-family: monospace; color: var(--text); outline: none; resize: vertical; min-height: 180px; transition: border-color 0.2s; }
+.config-paste:focus { border-color: var(--primary); }
+.btn-connect { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 8px; font-family: inherit; }
+.btn-connect:active { opacity: 0.85; }
+.btn-disconnect { padding: 8px 14px; background: #fee2e2; color: #dc2626; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+/* TOAST */
+#toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293b; color: white; padding: 11px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 999; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+
+/* LOADING OVERLAY */
+#loading { position: fixed; inset: 0; background: var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; gap: 16px; }
+#loading svg { animation: spin 1.5s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading.hidden { display: none; }
+
+/* STAR SVG */
+.star-svg { flex-shrink: 0; }
+
+/* LOGIN SCREEN */
+#login-screen { position:fixed; inset:0; background:var(--primary); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+#login-screen.hidden { display:none; }
+.login-card { background:white; border-radius:20px; padding:32px 28px; width:100%; max-width:400px; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+.login-logo { text-align:center; margin-bottom:24px; }
+.login-title { font-size:22px; font-weight:900; color:var(--primary); margin-top:12px; }
+.login-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
+.login-tab-row { display:flex; background:#f1f5f9; border-radius:10px; padding:4px; margin-bottom:20px; gap:4px; }
+.login-tab { flex:1; padding:9px; border:none; background:none; border-radius:7px; font-size:13px; font-weight:700; cursor:pointer; color:var(--text-muted); transition:all 0.2s; font-family:inherit; }
+.login-tab.active { background:var(--primary); color:white; }
+.login-error { background:#fee2e2; color:#dc2626; border-radius:8px; padding:10px 14px; font-size:13px; font-weight:600; margin-bottom:12px; display:none; }
+.login-error.show { display:block; }
+.btn-login { width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; transition:opacity 0.2s; margin-top:4px; }
+.btn-login:active { opacity:0.85; }
+.btn-login:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* PRODUTOS */
+.produto-card { background:var(--card); border-radius:10px; padding:13px 14px; margin-bottom:8px; display:flex; align-items:center; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+.produto-icon { width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#e8f0fe,#c7d7f8); display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+.produto-info { flex:1; min-width:0; }
+.produto-nome { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.produto-sub  { font-size:11px; color:var(--text-muted); margin-top:2px; }
+.produto-preco { font-size:15px; font-weight:800; color:var(--primary); white-space:nowrap; }
+.btn-add-prod { width:30px; height:30px; border-radius:50%; background:var(--primary); color:white; border:none; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* ITEM PEDIDO */
+.item-pedido { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+.item-pedido:last-child { border-bottom:none; }
+.item-nome { flex:1; font-size:13px; font-weight:600; }
+.item-qty-ctrl { display:flex; align-items:center; gap:6px; }
+.qty-btn { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--border); background:white; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text); }
+.qty-num { width:28px; text-align:center; font-size:14px; font-weight:700; }
+.item-total { font-size:13px; font-weight:700; color:var(--primary); white-space:nowrap; }
+.item-del { color:var(--danger); background:none; border:none; font-size:16px; cursor:pointer; padding:0 4px; }
+
+/* TOTAL PEDIDO */
+.total-bar { background:var(--primary); color:white; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+.total-label { font-size:13px; opacity:0.85; }
+.total-valor { font-size:20px; font-weight:900; }
+
+/* DARK MODE */
+body.dark { --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --text-muted:#94a3b8; --border:#334155; }
+body.dark .app-header { background:#0f172a; }
+body.dark .bottom-nav { background:#1e293b; }
+body.dark .modal-sheet { background:#1e293b; }
+body.dark .form-control { background:#0f172a; border-color:#334155; color:#f1f5f9; }
+body.dark .form-check { background:#0f172a; }
+body.dark .qty-btn { background:#0f172a; border-color:#334155; color:#f1f5f9; }
+body.dark .setup-card { background:#1e293b; }
+body.dark .config-paste { background:#0f172a; border-color:#334155; color:#f1f5f9; }
+body.dark .produto-icon { background:linear-gradient(135deg,#1e3a5f,#2d5a9e); }
+body.dark .tabs { background:#1e293b; }
+body.dark .search-bar { background:#1e293b; }
+
+/* PRINT */
+@media print {
+  .bottom-nav, .app-header, .fab, #toast, #loading, .modal-overlay { display:none !important; }
+  body { background:white !important; }
+  .app-wrapper { margin-left:0 !important; }
+  .main-content { padding:0 !important; }
+  #print-area { display:block !important; }
+  .no-print { display:none !important; }
+}
+#print-area { display:none; }
+
+/* ====== DESKTOP ====== */
+@media (min-width: 768px) {
+  body { flex-direction: row; }
+  .bottom-nav { position: fixed; left: 0; top: 0; bottom: 0; width: 215px; height: 100vh; flex-direction: column; border-top: none; border-right: 1px solid var(--border); padding: 0; justify-content: flex-start; box-shadow: 2px 0 8px rgba(0,0,0,0.06); }
+  .nav-logo { display: flex; align-items: center; gap: 10px; padding: 16px 14px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .nav-item { flex-direction: row; justify-content: flex-start; padding: 13px 18px; font-size: 14px; gap: 12px; flex: 0; width: 100%; border-radius: 0; }
+  .nav-item.active { background: #e8f0fe; border-right: 3px solid var(--primary); }
+  .nav-badge { position: static; margin-left: auto; }
+  .app-wrapper { flex: 1; display: flex; flex-direction: column; margin-left: 215px; min-width: 0; }
+  .main-content { padding-bottom: 24px; }
+  .fab { right: 32px; bottom: 28px; }
+  .modal-overlay { align-items: center; }
+  .modal-sheet { border-radius: 16px; max-width: 520px; max-height: 85vh; }
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
+  #toast { bottom: 32px; }
+}
+@media (max-width: 767px) {
+  .nav-logo { display: none; }
+  .app-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <svg width="48" height="48" viewBox="0 0 100 96">
+    <defs>
+      <linearGradient id="lg0" x1="20%" y1="0%" x2="80%" y2="100%">
+        <stop offset="0%" stop-color="#d44040"/><stop offset="45%" stop-color="#88bbdd"/><stop offset="100%" stop-color="#aaccee"/>
+      </linearGradient>
+    </defs>
+    <polygon points="50,4 63,25 87,26 75,47 87,69 63,69 50,90 37,69 13,69 25,47 13,26 37,25" fill="url(#lg0)" stroke="white" stroke-width="2"/>
+    <polygon points="75,47 63,69 37,69 25,47 37,25 63,25" fill="rgba(255,255,255,0.2)"/>
+  </svg>
+  <div style="font-size:18px;font-weight:800;letter-spacing:1px;">ISRAEL REPRESENTAÇÃO</div>
+  <div style="font-size:13px;opacity:0.7;" id="loading-msg">Conectando...</div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="hidden">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 96" width="60" height="60">
+        <defs>
+          <linearGradient id="lgL1" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#b83030"/><stop offset="45%" stop-color="#6699cc"/><stop offset="100%" stop-color="#1a3a60"/>
+          </linearGradient>
+        </defs>
+        <polygon points="50,4 63,25 87,26 75,47 87,69 63,69 50,90 37,69 13,69 25,47 13,26 37,25" fill="url(#lgL1)" stroke="#aaccee" stroke-width="2"/>
+        <polygon points="75,47 63,69 37,69 25,47 37,25 63,25" fill="white" opacity="0.88"/>
+      </svg>
+      <div class="login-title">ISRAEL REPRESENTAÇÃO</div>
+      <div class="login-sub">Sistema de Gestão Comercial</div>
+    </div>
+
+    <div class="login-tab-row">
+      <button class="login-tab active" id="tab-login" onclick="alternarLoginCadastro('login')">Entrar</button>
+      <button class="login-tab"        id="tab-cadastro" onclick="alternarLoginCadastro('cadastro')">Criar Conta</button>
+    </div>
+
+    <div class="login-error" id="login-error"></div>
+
+    <div class="form-group">
+      <label class="form-label">E-mail</label>
+      <input type="email" class="form-control" id="login-email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input type="password" class="form-control" id="login-senha" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
+    </div>
+    <div class="form-group" id="login-confirmar-group" style="display:none;">
+      <label class="form-label">Confirmar Senha</label>
+      <input type="password" class="form-control" id="login-confirmar" placeholder="Repita a senha">
+    </div>
+
+    <button class="btn-login" id="btn-login-action" onclick="executarLogin()">🔐 Entrar</button>
+    <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-muted);">
+      <span id="login-forgot-link" onclick="recuperarSenha()" style="cursor:pointer;color:var(--primary);font-weight:600;text-decoration:underline;">Esqueci minha senha</span>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="bottom-nav" id="nav">
+  <div class="nav-logo">
+    <svg class="star-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 96" width="38" height="38">
+      <defs>
+        <linearGradient id="nlG1" x1="20%" y1="0%" x2="80%" y2="100%">
+          <stop offset="0%" stop-color="#b83030"/><stop offset="45%" stop-color="#6699cc"/><stop offset="100%" stop-color="#1a3a60"/>
+        </linearGradient>
+        <linearGradient id="nlG2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#d4eaf8"/><stop offset="100%" stop-color="#3a6aaa"/>
+        </linearGradient>
+      </defs>
+      <polygon points="50,4 63,25 87,26 75,47 87,69 63,69 50,90 37,69 13,69 25,47 13,26 37,25" fill="url(#nlG1)" stroke="url(#nlG2)" stroke-width="2.5" stroke-linejoin="round"/>
+      <polygon points="75,47 63,69 37,69 25,47 37,25 63,25" fill="white" opacity="0.88"/>
+    </svg>
+    <div>
+      <div style="font-size:13px;font-weight:900;color:#1e3a5f;letter-spacing:0.5px;">ISRAEL</div>
+      <div style="font-size:10px;font-weight:600;color:#64748b;letter-spacing:1.5px;">REPRESENTAÇÃO</div>
+    </div>
+  </div>
+  <button class="nav-item active" data-screen="home"     onclick="showScreen('home')">    <span class="nav-icon">🏠</span><span>Início</span></button>
+  <button class="nav-item"        data-screen="clientes" onclick="showScreen('clientes')"><span class="nav-icon">👤</span><span>Clientes</span></button>
+  <button class="nav-item"        data-screen="visitas"  onclick="showScreen('visitas')"> <span class="nav-icon">📍</span><span>Visitas</span></button>
+  <button class="nav-item"        data-screen="pedidos"  onclick="showScreen('pedidos')"> <span class="nav-icon">📦</span><span>Pedidos</span><span class="nav-badge" id="nav-badge">0</span></button>
+  <button class="nav-item"        data-screen="produtos"  onclick="showScreen('produtos')"> <span class="nav-icon">🏷️</span><span>Produtos</span></button>
+  <button class="nav-item"        data-screen="controle" onclick="showScreen('controle')"><span class="nav-icon">📊</span><span>Controle</span></button>
+  <button class="nav-item"        data-screen="config"   onclick="showScreen('config')">  <span class="nav-icon">⚙️</span><span>Config</span></button>
+  <button class="nav-item" onclick="toggleDarkMode()" style="margin-top:auto;" id="btn-dark"><span class="nav-icon">🌙</span><span>Tema</span></button>
+</nav>
+
+<!-- APP WRAPPER -->
+<div class="app-wrapper">
+  <header class="app-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <svg class="star-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 96" width="32" height="32">
+        <defs>
+          <linearGradient id="hG1" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#d44040"/><stop offset="45%" stop-color="#88bbdd"/><stop offset="100%" stop-color="#aaccee"/>
+          </linearGradient>
+        </defs>
+        <polygon points="50,4 63,25 87,26 75,47 87,69 63,69 50,90 37,69 13,69 25,47 13,26 37,25" fill="url(#hG1)" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+        <polygon points="75,47 63,69 37,69 25,47 37,25 63,25" fill="rgba(255,255,255,0.2)"/>
+      </svg>
+      <div>
+        <div style="font-size:12px;font-weight:900;letter-spacing:0.8px;line-height:1.1;">ISRAEL <span style="font-weight:400;opacity:0.85;">REPRESENTAÇÃO</span></div>
+        <div class="header-date" id="header-date"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="sync-indicator" title="Status da conexão">
+        <span class="sync-dot off" id="sync-dot"></span>
+      </span>
+      <span style="font-size:13px;font-weight:700;opacity:0.9;" id="header-title">🏠 Início</span>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- HOME -->
+    <div class="screen active" id="screen-home">
+      <div class="alert-card" id="acao-dia" style="display:none;">
+        <div class="alert-title">⚡ Ação do Dia</div>
+        <div id="acao-dia-items"></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card">            <div class="stat-value" id="stat-visitas">–</div>     <div class="stat-label">📍 Visitas hoje</div></div>
+        <div class="stat-card c-accent">   <div class="stat-value" id="stat-pedidos-mes">–</div><div class="stat-label">📦 Pedidos no mês</div></div>
+        <div class="stat-card c-warning">  <div class="stat-value" id="stat-pendentes">–</div>  <div class="stat-label">⏳ Pendentes</div></div>
+        <div class="stat-card c-danger">   <div class="stat-value" id="stat-recusados">–</div>  <div class="stat-label">❌ Recusados</div></div>
+      </div>
+      <button class="action-btn btn-primary" onclick="abrirModalVisita()">➕ Registrar Visita</button>
+      <button class="action-btn btn-accent"  onclick="abrirModalPedido()">➕ Novo Pedido</button>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="screen" id="screen-clientes">
+      <div class="search-bar"><span>🔍</span><input type="text" class="search-input" placeholder="Buscar por nome ou cidade..." id="search-clientes" oninput="renderClientes()"></div>
+      <div id="lista-clientes"></div>
+    </div>
+
+    <!-- VISITAS -->
+    <div class="screen" id="screen-visitas">
+      <button class="action-btn btn-primary" onclick="abrirModalVisita()">➕ Registrar Visita</button>
+      <div class="section-title">Histórico de visitas</div>
+      <div id="lista-visitas"></div>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div class="screen" id="screen-pedidos">
+      <div class="tabs" id="pedido-tabs">
+        <button class="tab active" data-status="todos"    onclick="filtrarPedidos('todos')">Todos</button>
+        <button class="tab"        data-status="enviado"  onclick="filtrarPedidos('enviado')">Enviados</button>
+        <button class="tab"        data-status="aprovado" onclick="filtrarPedidos('aprovado')">Aprovados</button>
+        <button class="tab"        data-status="recusado" onclick="filtrarPedidos('recusado')">Recusados</button>
+      </div>
+      <div id="lista-pedidos"></div>
+    </div>
+
+    <!-- CONTROLE -->
+    <div class="screen" id="screen-controle">
+      <div class="section-title">Este mês</div>
+      <div class="stat-grid">
+        <div class="stat-card">           <div class="stat-value" id="ctrl-pedidos">–</div> <div class="stat-label">📦 Pedidos</div></div>
+        <div class="stat-card c-success"> <div class="stat-value" id="ctrl-clientes">–</div><div class="stat-label">👤 Clientes ativos</div></div>
+        <div class="stat-card c-accent">  <div class="stat-value" id="ctrl-taxa">–</div>    <div class="stat-label">✅ Aprovação</div></div>
+        <div class="stat-card c-warning"> <div class="stat-value" id="ctrl-visitas">–</div> <div class="stat-label">📍 Visitas</div></div>
+      </div>
+      <div class="section-title" style="margin-top:6px;">Top Clientes por Valor</div>
+      <div id="ctrl-top" class="card"></div>
+      <div class="section-title" style="margin-top:6px;">Pedidos por Status</div>
+      <div id="ctrl-status" class="card"></div>
+    </div>
+
+    <!-- PRODUTOS -->
+    <div class="screen" id="screen-produtos">
+      <div class="search-bar"><span>🔍</span><input type="text" class="search-input" placeholder="Buscar produto..." id="search-produtos" oninput="renderProdutos()"></div>
+      <div id="lista-produtos"></div>
+    </div>
+
+    <!-- CONFIG / FIREBASE SETUP -->
+    <div class="screen" id="screen-config">
+      <div class="setup-wrapper">
+
+        <div id="config-status-card" class="setup-card" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--success);">✅ Firebase Conectado</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:3px;" id="config-project-id">Projeto: –</div>
+            </div>
+            <button class="btn-disconnect" onclick="desconectarFirebase()">Desconectar</button>
+          </div>
+        </div>
+
+        <!-- CARD USUÁRIO LOGADO -->
+        <div id="config-user-card" class="setup-card" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--primary);">👤 Usuário</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:3px;" id="config-user-email">–</div>
+            </div>
+            <button class="btn-disconnect" onclick="fazerLogout()" style="background:#fff3cd;color:#856404;">Sair</button>
+          </div>
+        </div>
+
+        <div id="config-form-card" class="setup-card">
+          <div style="text-align:center;margin-bottom:20px;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 96" width="56" height="56" style="margin:0 auto 10px;">
+              <defs><linearGradient id="scG" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#b83030"/><stop offset="45%" stop-color="#6699cc"/><stop offset="100%" stop-color="#1a3a60"/></linearGradient></defs>
+              <polygon points="50,4 63,25 87,26 75,47 87,69 63,69 50,90 37,69 13,69 25,47 13,26 37,25" fill="url(#scG)" stroke="#aaccee" stroke-width="2"/>
+              <polygon points="75,47 63,69 37,69 25,47 37,25 63,25" fill="white" opacity="0.88"/>
+            </svg>
+            <div style="font-size:18px;font-weight:900;color:var(--primary);">Conectar ao Firebase</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Sincroniza dados entre tablet e notebook automaticamente</div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-num">1</div>
+            <div class="step-text">Acesse <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> e clique em <strong>"Adicionar projeto"</strong>. Use sua conta Google.</div>
+          </div>
+          <div class="setup-step">
+            <div class="step-num">2</div>
+            <div class="step-text">Dentro do projeto, clique no ícone <strong>&lt;/&gt; (Web)</strong> para adicionar um app web. Dê o nome <strong>"RepApp"</strong> e clique em Registrar.</div>
+          </div>
+          <div class="setup-step">
+            <div class="step-num">3</div>
+            <div class="step-text">Copie o bloco <strong>firebaseConfig</strong> que aparece (começa com <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;">apiKey: ...</code>) e cole abaixo.</div>
+          </div>
+          <div class="setup-step">
+            <div class="step-num">4</div>
+            <div class="step-text">No menu lateral do Firebase vá em <strong>Firestore Database → Criar banco de dados → Modo de teste</strong>. Isso ativa o banco.</div>
+          </div>
+
+          <div class="form-group" style="margin-top:6px;">
+            <label class="form-label">Cole aqui o firebaseConfig</label>
+            <textarea class="config-paste" id="firebase-config-input" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "meu-projeto.firebaseapp.com",
+  "projectId": "meu-projeto",
+  "storageBucket": "meu-projeto.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123456789:web:abc123"
+}'></textarea>
+          </div>
+          <button class="btn-connect" onclick="conectarFirebase()">🔗 Conectar e Sincronizar</button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab-btn" onclick="fabAction()">➕</button>
+
+<!-- MODAL: VISITA -->
+<div class="modal-overlay" id="modal-visita">
+  <div class="modal-sheet">
+    <div class="modal-header"><span class="modal-title">📍 Registrar Visita</span><button class="modal-close" onclick="fecharModal('modal-visita')">✕</button></div>
+    <div class="form-group"><label class="form-label">Cliente *</label><select class="form-control" id="visita-cliente"></select></div>
+    <div class="form-group"><label class="form-label">Observação</label><textarea class="form-control" id="visita-obs" rows="3" placeholder="O que aconteceu na visita?"></textarea></div>
+    <div class="form-group"><div class="form-check" onclick="document.getElementById('visita-gerou').click()"><input type="checkbox" id="visita-gerou" onclick="event.stopPropagation()"><label>✅ Gerou pedido?</label></div></div>
+    <button class="btn-submit" onclick="salvarVisita()">💾 Salvar Visita</button>
+  </div>
+</div>
+
+<!-- MODAL: PEDIDO -->
+<div class="modal-overlay" id="modal-pedido">
+  <div class="modal-sheet">
+    <div class="modal-header"><span class="modal-title">📦 Novo Pedido</span><button class="modal-close" onclick="fecharModal('modal-pedido')">✕</button></div>
+    <div class="form-group"><label class="form-label">Cliente *</label><select class="form-control" id="pedido-cliente"></select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label class="form-label">Nº do Pedido</label><input type="text" class="form-control" id="pedido-numero" placeholder="Ex: 00123"></div>
+      <div class="form-group"><label class="form-label">Data *</label><input type="date" class="form-control" id="pedido-data"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Fornecedor</label><input type="text" class="form-control" id="pedido-fornecedor" placeholder="Nome do fornecedor"></div>
+
+    <!-- PRODUTOS DO PEDIDO -->
+    <div class="section-title" style="margin-top:4px;">Produtos do Pedido</div>
+    <div class="search-bar" style="margin-bottom:8px;padding:9px 12px;">
+      <span>🔍</span>
+      <input type="text" class="search-input" id="pedido-busca-prod" placeholder="Buscar produto para adicionar..." oninput="renderProdutosPicker()">
+    </div>
+    <div id="produtos-picker" style="max-height:160px;overflow-y:auto;margin-bottom:10px;"></div>
+    <div id="itens-pedido-lista"></div>
+    <div class="total-bar" id="total-pedido-bar" style="display:none;">
+      <span class="total-label">Total do Pedido</span>
+      <span class="total-valor" id="total-pedido-valor">R$ 0,00</span>
+    </div>
+
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Valor Manual (R$) <span style="font-weight:400;font-size:10px;color:var(--text-muted);">— preencha se não usar produtos acima</span></label><input type="number" class="form-control" id="pedido-valor" placeholder="0,00" step="0.01" min="0"></div>
+    <div class="form-group"><label class="form-label">Observação</label><textarea class="form-control" id="pedido-obs" rows="2" placeholder="Detalhes do pedido..."></textarea></div>
+    <button class="btn-submit" onclick="salvarPedido()">💾 Salvar Pedido</button>
+  </div>
+</div>
+
+<!-- MODAL: CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal-sheet">
+    <div class="modal-header"><span class="modal-title">👤 Novo Cliente</span><button class="modal-close" onclick="fecharModal('modal-cliente')">✕</button></div>
+    <div class="form-group"><label class="form-label">Nome *</label><input type="text" class="form-control" id="cliente-nome" placeholder="Nome do cliente ou loja"></div>
+    <div class="form-group"><label class="form-label">Cidade</label><input type="text" class="form-control" id="cliente-cidade" placeholder="Cidade"></div>
+    <div class="form-group"><label class="form-label">Telefone / WhatsApp</label><input type="tel" class="form-control" id="cliente-tel" placeholder="(00) 00000-0000"></div>
+    <button class="btn-submit" onclick="salvarCliente()">💾 Salvar Cliente</button>
+  </div>
+</div>
+
+<!-- MODAL: DETALHE CLIENTE -->
+<div class="modal-overlay" id="modal-detalhe-cliente"><div class="modal-sheet" id="modal-detalhe-cliente-body"></div></div>
+
+<!-- MODAL: STATUS PEDIDO -->
+<div class="modal-overlay" id="modal-status-pedido"><div class="modal-sheet" id="modal-status-pedido-body"></div></div>
+
+<!-- MODAL: PRODUTO (add/edit) -->
+<div class="modal-overlay" id="modal-produto">
+  <div class="modal-sheet">
+    <div class="modal-header"><span class="modal-title" id="modal-produto-title">🏷️ Novo Produto</span><button class="modal-close" onclick="fecharModal('modal-produto')">✕</button></div>
+    <input type="hidden" id="produto-edit-id">
+    <div class="form-group"><label class="form-label">Nome do Produto *</label><input type="text" class="form-control" id="produto-nome" placeholder="Ex: Camiseta Polo M"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label class="form-label">Categoria</label><input type="text" class="form-control" id="produto-cat" placeholder="Ex: Vestuário"></div>
+      <div class="form-group"><label class="form-label">Cód. / SKU</label><input type="text" class="form-control" id="produto-sku" placeholder="Ex: CAM-001"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label class="form-label">Preço (R$) *</label><input type="number" class="form-control" id="produto-preco" placeholder="0,00" step="0.01" min="0"></div>
+      <div class="form-group"><label class="form-label">Unidade</label><input type="text" class="form-control" id="produto-unidade" placeholder="UN / CX / KG"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Descrição</label><textarea class="form-control" id="produto-desc" rows="2" placeholder="Descrição opcional..."></textarea></div>
+    <button class="btn-submit" onclick="salvarProduto()">💾 Salvar Produto</button>
+    <button class="btn-danger" id="btn-excluir-produto" style="display:none;" onclick="excluirProdutoEdit()">🗑️ Excluir Produto</button>
+  </div>
+</div>
+
+<!-- MODAL: IMPRIMIR PEDIDO -->
+<div class="modal-overlay" id="modal-print-pedido"><div class="modal-sheet" id="modal-print-body"></div></div>
+
+<!-- ÁREA DE IMPRESSÃO (oculta na tela, visível no print) -->
+<div id="print-area"></div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// =====================================================
+// ESTADO GLOBAL
+// =====================================================
+let db = null;
+let auth = null;
+let usuarioAtual = null;
+let STATE = { clientes: [], pedidos: [], visitas: [] };
+let unsubscribers = [];
+let telaAtual = 'home';
+let filtroPedido = 'todos';
+let modoLogin = 'login'; // 'login' | 'cadastro'
+
+// =====================================================
+// UTILITÁRIOS
+// =====================================================
+function hoje() { return new Date().toISOString().slice(0,10); }
+function meAtual() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function formatarData(s) { if(!s) return '–'; const [a,m,d]=s.split('-'); return d+'/'+m+'/'+a; }
+function diasDesde(s) { if(!s) return 999; return Math.floor((Date.now()-new Date(s).getTime())/86400000); }
+function moeda(v) { return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+// =====================================================
+// FIREBASE — CONFIGURAÇÃO
+// =====================================================
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem('repapp_firebase_config') || 'null'); }
+  catch(e) { return null; }
+}
+function salvarConfig(cfg) { localStorage.setItem('repapp_firebase_config', JSON.stringify(cfg)); }
+function limparConfig() { localStorage.removeItem('repapp_firebase_config'); }
+
+function conectarFirebase() {
+  const raw = document.getElementById('firebase-config-input').value.trim();
+  let cfg;
+  try {
+    // aceita tanto JSON puro quanto o formato do Firebase com chaves sem aspas
+    const clean = raw
+      .replace(/^[\s\S]*?({)/, '$1')   // pega de { em diante
+      .replace(/,\s*}/, '}')           // remove vírgula final
+      .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":'); // adiciona aspas nas chaves
+    cfg = JSON.parse(clean);
+  } catch(e) {
+    try { cfg = JSON.parse(raw); } catch(e2) {
+      toast('❌ Config inválida. Verifique e tente novamente.');
+      return;
+    }
+  }
+  if (!cfg.apiKey || !cfg.projectId) {
+    toast('❌ Config incompleta. Precisa ter apiKey e projectId.');
+    return;
+  }
+  salvarConfig(cfg);
+  toast('🔗 Conectando...');
+  location.reload();
+}
+
+function desconectarFirebase() {
+  if (!confirm('Desconectar do Firebase? Os dados ficarão apenas no servidor, mas você perderá acesso offline.')) return;
+  limparConfig();
+  location.reload();
+}
+
+// =====================================================
+// AUTENTICAÇÃO — LOGIN / CADASTRO / LOGOUT
+// =====================================================
+function mostrarErroLogin(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function limparErroLogin() {
+  document.getElementById('login-error').classList.remove('show');
+}
+
+function alternarLoginCadastro(modo) {
+  modoLogin = modo;
+  document.getElementById('tab-login').classList.toggle('active', modo === 'login');
+  document.getElementById('tab-cadastro').classList.toggle('active', modo === 'cadastro');
+  document.getElementById('login-confirmar-group').style.display = modo === 'cadastro' ? 'block' : 'none';
+  document.getElementById('login-forgot-link').style.display = modo === 'login' ? 'inline' : 'none';
+  document.getElementById('btn-login-action').textContent = modo === 'login' ? '🔐 Entrar' : '✅ Criar Conta';
+  limparErroLogin();
+}
+
+async function executarLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const confirmar = document.getElementById('login-confirmar').value;
+  limparErroLogin();
+
+  if (!email || !senha) { mostrarErroLogin('Preencha e-mail e senha.'); return; }
+  if (modoLogin === 'cadastro' && senha !== confirmar) { mostrarErroLogin('As senhas não coincidem.'); return; }
+  if (modoLogin === 'cadastro' && senha.length < 6) { mostrarErroLogin('Senha deve ter ao menos 6 caracteres.'); return; }
+
+  const btn = document.getElementById('btn-login-action');
+  btn.disabled = true;
+  btn.textContent = '⏳ Aguarde...';
+
+  try {
+    if (modoLogin === 'login') {
+      await auth.signInWithEmailAndPassword(email, senha);
+    } else {
+      await auth.createUserWithEmailAndPassword(email, senha);
+    }
+    // onAuthStateChanged cuida do resto
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = modoLogin === 'login' ? '🔐 Entrar' : '✅ Criar Conta';
+    const msgs = {
+      'auth/user-not-found'     : 'E-mail não cadastrado. Use "Criar Conta".',
+      'auth/wrong-password'     : 'Senha incorreta. Tente novamente.',
+      'auth/email-already-in-use': 'Este e-mail já está cadastrado. Use "Entrar".',
+      'auth/invalid-email'      : 'E-mail inválido.',
+      'auth/too-many-requests'  : 'Muitas tentativas. Aguarde alguns minutos.',
+      'auth/invalid-credential' : 'E-mail ou senha incorretos.',
+    };
+    mostrarErroLogin(msgs[e.code] || 'Erro: ' + e.message);
+  }
+}
+
+async function recuperarSenha() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { mostrarErroLogin('Digite seu e-mail para recuperar a senha.'); return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    limparErroLogin();
+    toast('📧 E-mail de recuperação enviado!');
+  } catch(e) {
+    mostrarErroLogin('Não foi possível enviar. Verifique o e-mail.');
+  }
+}
+
+async function fazerLogout() {
+  if (!confirm('Deseja sair da conta?')) return;
+  await auth.signOut();
+  // onAuthStateChanged vai mostrar a tela de login
+}
+
+// =====================================================
+// INICIALIZAR FIREBASE E LISTENERS
+// =====================================================
+function initFirebase(cfg) {
+  try {
+    firebase.initializeApp(cfg);
+  } catch(e) {
+    // app já inicializado
+  }
+  db = firebase.firestore();
+  auth = firebase.auth();
+
+  // Persistência offline
+  db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+
+  // Escuta mudanças de autenticação
+  let dadosCarregados = false;
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      usuarioAtual = user;
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('config-user-card').style.display = 'block';
+      document.getElementById('config-user-email').textContent = user.email;
+      // Mostrar loading de dados pela primeira vez
+      if (!dadosCarregados) {
+        document.getElementById('loading-msg').textContent = 'Carregando dados…';
+      }
+    } else {
+      usuarioAtual = null;
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('config-user-card').style.display = 'none';
+    }
+  });
+
+  // Listeners em tempo real
+  unsubscribers.push(
+    db.collection('clientes').onSnapshot(snap => {
+      STATE.clientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (telaAtual === 'clientes') renderClientes();
+      renderHome();
+      setSyncOk();
+      // Remove loading após primeiro dado chegar (só se usuário logado)
+      if (!dadosCarregados && usuarioAtual) {
+        dadosCarregados = true;
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }, err => {
+      console.error('clientes:', err);
+      setSyncOff();
+      if (!dadosCarregados) {
+        dadosCarregados = true;
+        document.getElementById('loading').classList.add('hidden');
+        toast('⚠️ Modo offline');
+      }
+    })
+  );
+
+  unsubscribers.push(
+    db.collection('pedidos').onSnapshot(snap => {
+      STATE.pedidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (telaAtual === 'pedidos') renderPedidos();
+      renderHome();
+      setSyncOk();
+    }, err => { console.error('pedidos:', err); setSyncOff(); })
+  );
+
+  unsubscribers.push(
+    db.collection('visitas').onSnapshot(snap => {
+      STATE.visitas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (telaAtual === 'visitas') renderVisitas();
+      setSyncOk();
+    }, err => { console.error('visitas:', err); setSyncOff(); })
+  );
+}
+
+function setSyncOk()   { const d=document.getElementById('sync-dot'); if(d){d.className='sync-dot ok';} }
+function setSyncSync() { const d=document.getElementById('sync-dot'); if(d){d.className='sync-dot sync';} }
+function setSyncOff()  { const d=document.getElementById('sync-dot'); if(d){d.className='sync-dot off';} }
+
+// =====================================================
+// CRUD — FIRESTORE
+// =====================================================
+async function addDoc_(col, data) {
+  if (!db) { toast('❌ Firebase não conectado'); return null; }
+  setSyncSync();
+  try { const ref = await db.collection(col).add(data); setSyncOk(); return ref.id; }
+  catch(e) { setSyncOff(); toast('❌ Erro ao salvar: '+e.message); return null; }
+}
+async function updateDoc_(col, id, data) {
+  if (!db) return;
+  setSyncSync();
+  try { await db.collection(col).doc(id).update(data); setSyncOk(); }
+  catch(e) { setSyncOff(); toast('❌ Erro: '+e.message); }
+}
+async function deleteDoc_(col, id) {
+  if (!db) return;
+  setSyncSync();
+  try { await db.collection(col).doc(id).delete(); setSyncOk(); }
+  catch(e) { setSyncOff(); toast('❌ Erro: '+e.message); }
+}
+
+// =====================================================
+// NAVEGAÇÃO
+// =====================================================
+const TITULOS = { home:'🏠 Início', clientes:'👤 Clientes', visitas:'📍 Visitas', pedidos:'📦 Pedidos', produtos:'🏷️ Produtos', controle:'📊 Controle', config:'⚙️ Configurar' };
+
+function showScreen(tela) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-'+tela).classList.add('active');
+  document.querySelector('[data-screen="'+tela+'"]').classList.add('active');
+  telaAtual = tela;
+  document.getElementById('header-title').textContent = TITULOS[tela];
+  const fab = document.getElementById('fab-btn');
+  fab.style.display = (tela==='clientes'||tela==='pedidos') ? 'flex' : 'none';
+  if (tela==='home')     renderHome();
+  if (tela==='clientes') renderClientes();
+  if (tela==='visitas')  renderVisitas();
+  if (tela==='pedidos')  renderPedidos();
+  if (tela==='controle') renderControle();
+  if (tela==='config')   renderConfigScreen();
+}
+
+function fabAction() {
+  if (telaAtual==='clientes') abrirModal('modal-cliente');
+  else if (telaAtual==='pedidos') abrirModalPedido();
+}
+
+// =====================================================
+// HOME
+// =====================================================
+function renderHome() {
+  const mes = meAtual();
+  const visitasHoje = STATE.visitas.filter(v => v.data===hoje()).length;
+  const pedidosMes  = STATE.pedidos.filter(p => (p.data||'').startsWith(mes)).length;
+  const pendentes   = STATE.pedidos.filter(p => p.status==='enviado').length;
+  const recusados   = STATE.pedidos.filter(p => p.status==='recusado').length;
+
+  document.getElementById('stat-visitas').textContent     = visitasHoje;
+  document.getElementById('stat-pedidos-mes').textContent = pedidosMes;
+  document.getElementById('stat-pendentes').textContent   = pendentes;
+  document.getElementById('stat-recusados').textContent   = recusados;
+
+  const badge = document.getElementById('nav-badge');
+  if (pendentes > 0) { badge.textContent=pendentes; badge.style.display='inline'; }
+  else { badge.style.display='none'; }
+
+  // Ação do dia
+  const alertas = [];
+  STATE.clientes.forEach(c => {
+    const d = diasDesde(c.ultima_visita);
+    if (d >= 30) alertas.push({ icon:'⚠️', msg:c.nome+' sem visita há '+d+' dias', fn:()=>abrirDetalheCliente(c.id) });
+  });
+  STATE.pedidos.filter(p=>p.status==='enviado').forEach(p => {
+    const d = diasDesde(p.data);
+    if (d >= 3) {
+      const c = STATE.clientes.find(x=>x.id===p.cliente_id);
+      alertas.push({ icon:'🔴', msg:'Pedido de '+(c?c.nome:'?')+' parado há '+d+' dias', fn:()=>showScreen('pedidos') });
+    }
+  });
+  STATE.clientes.forEach(c => {
+    if (!STATE.pedidos.some(p=>p.cliente_id===c.id))
+      alertas.push({ icon:'💡', msg:c.nome+' nunca fez pedido — oportunidade!', fn:()=>abrirDetalheCliente(c.id) });
+  });
+
+  window._alertas = alertas;
+  const acaoDiv = document.getElementById('acao-dia');
+  const acaoItems = document.getElementById('acao-dia-items');
+  if (alertas.length > 0) {
+    acaoDiv.style.display = 'block';
+    acaoItems.innerHTML = alertas.slice(0,5).map((a,i)=>'<div class="alert-item" onclick="_alertas['+i+'].fn()">'+a.icon+' '+a.msg+'</div>').join('');
+  } else { acaoDiv.style.display='none'; }
+}
+
+// =====================================================
+// CLIENTES
+// =====================================================
+function renderClientes() {
+  const busca = (document.getElementById('search-clientes')?.value||'').toLowerCase();
+  const filtrados = STATE.clientes.filter(c => c.nome.toLowerCase().includes(busca)||(c.cidade||'').toLowerCase().includes(busca));
+  const lista = document.getElementById('lista-clientes');
+  if (filtrados.length===0) { lista.innerHTML='<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">Nenhum cliente encontrado</div></div>'; return; }
+  lista.innerHTML = filtrados.map(c => {
+    const atrasado = diasDesde(c.ultima_visita) > 21;
+    return '<div class="list-item" onclick="abrirDetalheCliente(\''+c.id+'\')"><div class="list-item-icon">🏪</div><div class="list-item-body"><div class="list-item-title">'+c.nome+'</div><div class="list-item-sub">📍 '+(c.cidade||'–')+' · Visita: '+formatarData(c.ultima_visita)+'</div></div><div class="list-item-right"><span class="badge '+(atrasado?'badge-late':'badge-ok')+'">'+(atrasado?'ATRASADO':'OK')+'</span></div></div>';
+  }).join('');
+}
+
+function abrirDetalheCliente(cid) {
+  const c = STATE.clientes.find(x=>x.id===cid); if(!c) return;
+  const cpeds = STATE.pedidos.filter(p=>p.cliente_id===cid);
+  const cvis  = STATE.visitas.filter(v=>v.cliente_id===cid);
+  const total = cpeds.filter(p=>p.status==='aprovado'||p.status==='faturado').reduce((s,p)=>s+Number(p.valor||0),0);
+  const wanum = (c.telefone||'').replace(/\D/g,'');
+
+  const hVis = cvis.length===0 ? '<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">Nenhuma visita</p>' :
+    cvis.slice().reverse().slice(0,6).map(v=>'<div class="history-item">📅 '+formatarData(v.data)+' — '+(v.obs||'Sem obs.')+(v.gerou_pedido?' ✅':''  )+'</div>').join('');
+
+  const hPed = cpeds.length===0 ? '<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">Nenhum pedido</p>' :
+    cpeds.slice().reverse().slice(0,6).map(p=>'<div class="history-item" style="display:flex;align-items:center;justify-content:space-between;"><span>'+(p.numero?'Nº '+p.numero+' · ':'')+formatarData(p.data)+' — '+(p.fornecedor||'–')+' — '+moeda(p.valor)+'</span><span class="badge badge-'+p.status+'">'+p.status.toUpperCase()+'</span></div>').join('');
+
+  document.getElementById('modal-detalhe-cliente-body').innerHTML =
+    '<div class="modal-header"><span class="modal-title">🏪 '+c.nome+'</span><button class="modal-close" onclick="fecharModal(\'modal-detalhe-cliente\')">✕</button></div>'+
+    '<div class="detail-row"><div class="detail-cell"><div class="detail-label">Cidade</div><div class="detail-value">'+(c.cidade||'–')+'</div></div><div class="detail-cell"><div class="detail-label">Telefone</div><div class="detail-value">'+(c.telefone||'–')+'</div></div>'+(wanum?'<a href="https://
