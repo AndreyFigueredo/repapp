@@ -1346,13 +1346,26 @@ body.dark .badge-futuro { color: #7ab4f5; }
   <div class="modal-sheet">
     <div class="modal-header"><span class="modal-title" id="modal-cliente-title">👤 Novo Cliente</span><button class="modal-close" onclick="fecharModal('modal-cliente')">✕</button></div>
     <input type="hidden" id="cliente-edit-id">
+
+    <!-- BUSCA POR CNPJ -->
+    <div class="form-group">
+      <label class="form-label">CNPJ / CPF <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(preenche os dados automaticamente)</span></label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="form-control" id="cliente-cnpj" placeholder="00.000.000/0001-00" maxlength="18" oninput="mascaraCNPJCliente(this)" style="flex:1;">
+        <button onclick="buscarCNPJCliente()" id="btn-buscar-cnpj-cliente" style="padding:10px 14px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+          🔍 Buscar
+        </button>
+      </div>
+      <div id="cnpj-cliente-status" style="font-size:12px;margin-top:5px;min-height:16px;"></div>
+    </div>
+
     <div class="form-row">
       <div class="form-group"><label class="form-label">Razão Social *</label><input type="text" class="form-control" id="cliente-nome" placeholder="Razão Social"></div>
       <div class="form-group"><label class="form-label">Nome Fantasia</label><input type="text" class="form-control" id="cliente-fantasia" placeholder="Nome Fantasia"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">CNPJ / CPF</label><input type="text" class="form-control" id="cliente-cnpj" placeholder="00.000.000/0001-00"></div>
       <div class="form-group"><label class="form-label">Segmento</label><input type="text" class="form-control" id="cliente-segmento" placeholder="Ex: Supermercado"></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="cliente-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Telefone / WhatsApp</label><input type="tel" class="form-control" id="cliente-tel" placeholder="(00) 00000-0000"></div>
@@ -1369,7 +1382,6 @@ body.dark .badge-futuro { color: #7ab4f5; }
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">CEP</label><input type="text" class="form-control" id="cliente-cep" placeholder="00000-000"></div>
-      <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="cliente-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>
     </div>
     <button class="btn-submit" onclick="salvarCliente()">💾 Salvar Cliente</button>
     <button class="btn-danger" id="btn-excluir-cliente" style="display:none;" onclick="excluirClienteEdit()">🗑️ Excluir Cliente</button>
@@ -2334,6 +2346,67 @@ async function buscarCNPJ() {
 function toTitleCase(str) {
   if (!str) return '';
   return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Máscara CNPJ para o modal de cliente
+function mascaraCNPJCliente(input) {
+  let v = input.value.replace(/\D/g,'');
+  if (v.length > 14) v = v.slice(0,14);
+  v = v.replace(/(\d{2})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\/)(\d)/,'$1/$3');
+  v = v.replace(/(\.\d{3})\/?(\ d{4})(\d)/,'$1/$2-$3');
+  v = v.replace(/(-\d{2})\d+?$/,'$1');
+  input.value = v;
+}
+
+// Busca automática de CNPJ para clientes via BrasilAPI
+async function buscarCNPJCliente() {
+  const cnpjRaw = (document.getElementById('cliente-cnpj').value || '').replace(/\D/g,'');
+  const statusEl = document.getElementById('cnpj-cliente-status');
+  if (cnpjRaw.length !== 14) {
+    statusEl.innerHTML = '<span style="color:var(--danger,#ef4444)">❌ CNPJ inválido. Informe os 14 dígitos.</span>';
+    return;
+  }
+  const btn = document.getElementById('btn-buscar-cnpj-cliente');
+  btn.textContent = '⏳ Buscando...';
+  btn.disabled = true;
+  statusEl.innerHTML = '<span style="color:var(--text-muted)">Consultando Receita Federal...</span>';
+  try {
+    const resp = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjRaw}`);
+    if (!resp.ok) throw new Error('CNPJ não encontrado na Receita Federal.');
+    const d = await resp.json();
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    // Razão Social e Nome Fantasia
+    set('cliente-nome', toTitleCase(d.razao_social || ''));
+    if (d.nome_fantasia && d.nome_fantasia.trim()) set('cliente-fantasia', toTitleCase(d.nome_fantasia));
+    // Telefone
+    const tel1 = (d.ddd_telefone_1||'').replace(/\D/g,'');
+    if (tel1.length >= 10) {
+      const ddd = tel1.slice(0,2), num = tel1.slice(2);
+      set('cliente-tel', `(${ddd}) ${num.length===9?num.slice(0,5)+'-'+num.slice(5):num.slice(0,4)+'-'+num.slice(4)}`);
+    }
+    if (d.email) set('cliente-email', d.email.toLowerCase());
+    // Endereço
+    set('cliente-endereco', toTitleCase([d.logradouro].filter(Boolean).join(', ')));
+    if (d.numero) set('cliente-numero', d.numero);
+    set('cliente-bairro', toTitleCase(d.bairro || ''));
+    set('cliente-cidade', toTitleCase(d.municipio || ''));
+    const ufEl = document.getElementById('cliente-uf');
+    if (ufEl && d.uf) ufEl.value = d.uf;
+    if (d.cep) set('cliente-cep', d.cep.replace(/(\d{5})(\d{3})/, '$1-$2'));
+    // Segmento baseado na atividade principal
+    if (d.cnae_fiscal_descricao) set('cliente-segmento', toTitleCase(d.cnae_fiscal_descricao));
+    // Status
+    const sit = d.descricao_situacao_cadastral || '';
+    const cor = sit === 'ATIVA' ? 'var(--success)' : 'var(--danger,#ef4444)';
+    statusEl.innerHTML = `<span style="color:${cor}">✅ Empresa encontrada! Situação: <strong>${sit}</strong></span>`;
+  } catch(err) {
+    statusEl.innerHTML = `<span style="color:var(--danger,#ef4444)">❌ ${err.message}</span>`;
+  } finally {
+    btn.textContent = '🔍 Buscar';
+    btn.disabled = false;
+  }
 }
 
 function abrirModalIndustria() {
