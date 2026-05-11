@@ -1490,11 +1490,22 @@ body.dark .badge-futuro { color: #7ab4f5; }
   <div class="modal-sheet">
     <div class="modal-header"><span class="modal-title" id="modal-produto-title">🏷️ Novo Produto</span><button class="modal-close" onclick="fecharModal('modal-produto')">✕</button></div>
     <input type="hidden" id="produto-edit-id">
-    <div class="form-group"><label class="form-label">Nome do Produto *</label><input type="text" class="form-control" id="produto-nome" placeholder="Ex: Camiseta Polo M"></div>
+
+    <!-- BUSCA POR CÓDIGO NO CATÁLOGO -->
+    <div class="form-group" id="bloco-busca-catalogo">
+      <label class="form-label">Cód. / Referência <span style="font-size:11px;color:var(--primary);font-weight:600;">(🔍 busca no catálogo automaticamente)</span></label>
+      <div style="position:relative;">
+        <input type="text" class="form-control" id="produto-sku" placeholder="Digite o código... ex: 5.0031" oninput="buscarNoCatalogo(this.value)" autocomplete="off">
+        <div id="catalogo-sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--primary);border-radius:0 0 10px 10px;z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
+      </div>
+      <div id="catalogo-busca-status" style="font-size:11px;color:var(--text-muted);margin-top:4px;min-height:14px;"></div>
+    </div>
+
+    <div class="form-group"><label class="form-label">Nome do Produto *</label><input type="text" class="form-control" id="produto-nome" placeholder="Ex: Broca Helicoidal 5mm"></div>
     <div class="form-group"><label class="form-label">Indústria / Marca</label><select class="form-control" id="produto-industria"><option value="">Sem vínculo</option></select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-group"><label class="form-label">Categoria</label><input type="text" class="form-control" id="produto-cat" placeholder="Ex: Vestuário"></div>
-      <div class="form-group"><label class="form-label">Cód. / Referência</label><input type="text" class="form-control" id="produto-sku" placeholder="Ex: CAM-001"></div>
+      <div class="form-group"><label class="form-label">Categoria</label><input type="text" class="form-control" id="produto-cat" placeholder="Ex: Ferramentas de Corte"></div>
+      <div class="form-group"><label class="form-label">Medida / Diâmetro</label><input type="text" class="form-control" id="produto-medida" placeholder="Ex: 5mm, 1/4", 10x20"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group"><label class="form-label">Preço (R$) *</label><input type="number" class="form-control" id="produto-preco" placeholder="0,00" step="0.01" min="0"></div>
@@ -1541,6 +1552,10 @@ body.dark .badge-futuro { color: #7ab4f5; }
       <div style="font-size:40px;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block;">⚙️</div>
       <div style="font-size:16px;font-weight:700;color:var(--text);">Analisando o catálogo...</div>
       <div id="catalogo-status" style="font-size:13px;color:var(--text-muted);margin-top:8px;">Lendo o PDF...</div>
+      <div style="margin-top:16px;background:var(--card-border);border-radius:99px;height:8px;overflow:hidden;">
+        <div id="catalogo-progress" style="height:100%;background:var(--primary);border-radius:99px;width:0%;transition:width 0.4s ease;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Isso pode levar alguns minutos para PDFs grandes</div>
     </div>
 
     <!-- PASSO 3: Resultados -->
@@ -1574,7 +1589,7 @@ body.dark .badge-futuro { color: #7ab4f5; }
 let db = null;
 let auth = null;
 let usuarioAtual = null;
-let STATE = { clientes: [], pedidos: [], visitas: [], industrias: [], orcamentos: [], agenda: [] };
+let STATE = { clientes: [], pedidos: [], visitas: [], industrias: [], orcamentos: [], agenda: [], catalogoIndex: [], produtos: [] };
 let unsubscribers = [];
 let telaAtual = 'home';
 let filtroPedido = 'todos';
@@ -1778,6 +1793,14 @@ function initFirebase(cfg) {
       atualizarBadgesAgenda();
       setSyncOk();
     }, err => { console.error('agenda:', err); setSyncOff(); })
+  );
+
+  // Índice do catálogo (produtos indexados dos PDFs)
+  unsubscribers.push(
+    db.collection('catalogo_index').onSnapshot(snap => {
+      STATE.catalogoIndex = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setSyncOk();
+    }, err => { console.error('catalogo_index:', err); })
   );
 }
 
@@ -2731,10 +2754,13 @@ function abrirModalProduto() {
   document.getElementById('produto-nome').value = '';
   document.getElementById('produto-cat').value = '';
   document.getElementById('produto-sku').value = '';
+  document.getElementById('produto-medida') && (document.getElementById('produto-medida').value = '');
   document.getElementById('produto-preco').value = '';
   document.getElementById('produto-unidade').value = '';
   document.getElementById('produto-desc').value = '';
   document.getElementById('btn-excluir-produto').style.display = 'none';
+  const bsEl = document.getElementById('catalogo-busca-status'); if(bsEl) bsEl.textContent = '';
+  const sgEl = document.getElementById('catalogo-sugestoes'); if(sgEl) { sgEl.innerHTML=''; sgEl.style.display='none'; }
   popularSelectIndustriasProduto();
   abrirModal('modal-produto');
 }
@@ -2746,10 +2772,13 @@ function editarProduto(pid) {
   document.getElementById('produto-nome').value = p.nome || '';
   document.getElementById('produto-cat').value = p.categoria || '';
   document.getElementById('produto-sku').value = p.sku || '';
+  document.getElementById('produto-medida') && (document.getElementById('produto-medida').value = p.medida || '');
   document.getElementById('produto-preco').value = p.preco || '';
   document.getElementById('produto-unidade').value = p.unidade || '';
   document.getElementById('produto-desc').value = p.descricao || '';
   document.getElementById('btn-excluir-produto').style.display = 'block';
+  const bsEl = document.getElementById('catalogo-busca-status'); if(bsEl) bsEl.textContent = '';
+  const sgEl = document.getElementById('catalogo-sugestoes'); if(sgEl) { sgEl.innerHTML=''; sgEl.style.display='none'; }
   popularSelectIndustriasProduto(p.industriaId || '');
   abrirModal('modal-produto');
 }
@@ -2758,13 +2787,14 @@ async function salvarProduto() {
   const nome       = document.getElementById('produto-nome').value.trim();
   const cat        = document.getElementById('produto-cat').value.trim();
   const sku        = document.getElementById('produto-sku').value.trim();
+  const medida     = (document.getElementById('produto-medida') ? document.getElementById('produto-medida').value.trim() : '');
   const preco      = parseFloat(document.getElementById('produto-preco').value) || 0;
   const unid       = document.getElementById('produto-unidade').value.trim() || 'UN';
   const desc       = document.getElementById('produto-desc').value.trim();
   const industriaId = document.getElementById('produto-industria').value || '';
   const editId     = document.getElementById('produto-edit-id').value;
   if (!nome) { alert('Informe o nome do produto!'); return; }
-  const data = { nome, categoria: cat, sku, preco, unidade: unid, descricao: desc, industriaId };
+  const data = { nome, categoria: cat, sku, medida, preco, unidade: unid, descricao: desc, industriaId };
   if (editId) {
     await updateDoc_('produtos', editId, data);
     toast('✅ Produto atualizado!');
@@ -2815,10 +2845,8 @@ function catalogoFileSelected(input) {
   document.getElementById('catalogo-file-name').textContent = '✅ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
   const btn = document.getElementById('btn-processar-catalogo');
   btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
-  // Ler como base64
-  const reader = new FileReader();
-  reader.onload = e => { catalogoFileData = e.target.result.split(',')[1]; };
-  reader.readAsDataURL(file);
+  // Guardar o File diretamente (sem base64 para evitar problemas de memória)
+  catalogoFileData = file;
   // Drag & drop visual
   const drop = document.getElementById('catalogo-drop-area');
   drop.style.borderColor = 'var(--success, #22c55e)';
@@ -2827,98 +2855,120 @@ function catalogoFileSelected(input) {
 
 async function processarCatalogoPDF() {
   if (!catalogoFileData) { toast('Selecione um arquivo PDF!'); return; }
-  // Ir para passo 2
   document.getElementById('catalogo-step1').style.display = 'none';
   document.getElementById('catalogo-step2').style.display = 'block';
   document.getElementById('catalogo-step3').style.display = 'none';
 
-  const setStatus = t => { const el = document.getElementById('catalogo-status'); if (el) el.textContent = t; };
+  const setStatus = (t, pct) => {
+    const el = document.getElementById('catalogo-status'); if (el) el.textContent = t;
+    const bar = document.getElementById('catalogo-progress'); if (bar && pct !== undefined) bar.style.width = pct + '%';
+  };
 
   try {
-    setStatus('Enviando PDF para análise...');
     const categoria = document.getElementById('catalogo-categoria').value.trim();
     const indId = document.getElementById('catalogo-industria').value;
     const indNome = indId ? (STATE.industrias.find(i=>i.id===indId)||{}).nome || '' : '';
+    const OPENAI_KEY = window._openaiKey || localStorage.getItem('openai_key') || '';
+    if (!OPENAI_KEY) throw new Error('Configure sua chave OpenAI em Config → 🤖 IA para Importar Catálogos');
 
-    // Chamar a API OpenAI com o PDF em base64
-    const OPENAI_KEY = window._openaiKey || '';
-    const prompt = `Você é um assistente especializado em extrair dados de catálogos de produtos.
-Analise o conteúdo deste PDF de catálogo${indNome?' da marca '+indNome:''} e extraia TODOS os produtos encontrados.
-Para cada produto, retorne um JSON array com objetos no formato:
-{"nome": "Nome completo do produto", "sku": "Código ou referência", "descricao": "Descrição breve", "preco": 0, "unidade": "UN"}
-Se não encontrar preço, use 0. Se não encontrar unidade, use "UN".
-Retorne APENAS o JSON array, sem texto adicional.`;
-
-    setStatus('IA analisando o conteúdo...');
-
-    let produtos = [];
-
-    // Tentar via OpenAI com visão (PDF como imagem) ou texto
-    try {
-      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
-        body: JSON.stringify({
-          model: 'gpt-4.1-mini',
-          max_tokens: 4000,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: `data:application/pdf;base64,${catalogoFileData}` } }
-            ]
-          }]
-        })
+    // PASSO 1: Carregar pdf.js
+    setStatus('📥 Carregando leitor de PDF...', 5);
+    if (!window.pdfjsLib) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload = res; s.onerror = () => rej(new Error('Falha ao carregar pdf.js. Verifique sua conexão.'));
+        document.head.appendChild(s);
       });
-      const json = await resp.json();
-      const txt = json.choices?.[0]?.message?.content || '';
-      const match = txt.match(/\[.*\]/s);
-      if (match) produtos = JSON.parse(match[0]);
-    } catch(e) {
-      // Fallback: tentar extrair texto do PDF via FileReader e enviar como texto
-      setStatus('Tentando extrair texto do PDF...');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // PASSO 2: Ler o arquivo como ArrayBuffer (sem base64)
+    setStatus('📄 Lendo o arquivo PDF...', 10);
+    const arrayBuffer = await catalogoFileData.arrayBuffer();
+    const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const totalPaginas = pdfDoc.numPages;
+    setStatus(`📝 Extraindo texto de ${totalPaginas} páginas...`, 15);
+
+    // PASSO 3: Extrair texto de todas as páginas (pulando as primeiras 4 que são índice)
+    const INICIO = 4; // pular capa e índice
+    const FIM = Math.min(totalPaginas, 200); // limitar a 200 páginas
+    let textoPorPagina = [];
+    for (let i = INICIO; i < FIM; i++) {
+      const page = await pdfDoc.getPage(i + 1);
+      const content = await page.getTextContent();
+      const texto = content.items.map(item => item.str).join(' ').trim();
+      if (texto.length > 30) textoPorPagina.push(texto);
+      if (i % 20 === 0) setStatus(`📝 Extraindo texto... página ${i}/${FIM}`, 15 + Math.round((i/FIM)*30));
+    }
+    const textoCompleto = textoPorPagina.join('\n');
+    setStatus(`✅ Texto extraído (${Math.round(textoCompleto.length/1000)}KB). Enviando para IA em lotes...`, 45);
+
+    // PASSO 4: Dividir em lotes de ~8000 chars e enviar para GPT
+    const LOTE_SIZE = 8000;
+    const lotes = [];
+    for (let i = 0; i < textoCompleto.length; i += LOTE_SIZE) {
+      lotes.push(textoCompleto.slice(i, i + LOTE_SIZE));
+    }
+    const MAX_LOTES = 15; // máximo 15 lotes = ~120KB de texto
+    const lotesParaProcessar = lotes.slice(0, MAX_LOTES);
+
+    let todosProdutos = [];
+    const promptBase = `Você é um especialista em extrair dados de catálogos de ferramentas e equipamentos${indNome?' da marca '+indNome:''}.
+Analise o trecho abaixo e extraia TODOS os produtos com seus códigos/referências e preços.
+Retorne SOMENTE um JSON array válido no formato:
+[{"nome":"Nome do produto","sku":"Código/Referência","descricao":"Descrição breve","preco":0.00,"unidade":"UN"}]
+Regras:
+- "sku" deve ser o código numérico do produto (ex: 5.0031, 6.0018)
+- "preco" deve ser o valor numérico sem R$ (ex: 33.80)
+- Se não houver preço, use 0
+- Não inclua itens que são títulos de seção, números de página ou cabeçalhos
+- Retorne APENAS o JSON array, sem nenhum texto antes ou depois
+
+TRECHO DO CATÁLOGO:`;
+
+    for (let l = 0; l < lotesParaProcessar.length; l++) {
+      const pct = 45 + Math.round((l / lotesParaProcessar.length) * 45);
+      setStatus(`🤖 IA processando lote ${l+1}/${lotesParaProcessar.length}...`, pct);
       try {
-        // Usar pdf.js via CDN para extrair texto
-        if (!window.pdfjsLib) {
-          await new Promise((res, rej) => {
-            const s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-            s.onload = res; s.onerror = rej;
-            document.head.appendChild(s);
-          });
-          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
-        const pdfData = atob(catalogoFileData);
-        const pdfBytes = new Uint8Array(pdfData.length);
-        for (let i = 0; i < pdfData.length; i++) pdfBytes[i] = pdfData.charCodeAt(i);
-        const pdfDoc = await window.pdfjsLib.getDocument({ data: pdfBytes }).promise;
-        let textoTotal = '';
-        for (let i = 1; i <= Math.min(pdfDoc.numPages, 30); i++) {
-          const page = await pdfDoc.getPage(i);
-          const content = await page.getTextContent();
-          textoTotal += content.items.map(item => item.str).join(' ') + '\n';
-        }
-        setStatus('Enviando texto para a IA...');
-        const resp2 = await fetch('https://api.openai.com/v1/chat/completions', {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
           body: JSON.stringify({
             model: 'gpt-4.1-mini',
             max_tokens: 4000,
-            messages: [{ role: 'user', content: prompt + '\n\nTEXTO DO CATÁLOGO:\n' + textoTotal.substring(0, 12000) }]
+            temperature: 0,
+            messages: [{ role: 'user', content: promptBase + '\n' + lotesParaProcessar[l] }]
           })
         });
-        const json2 = await resp2.json();
-        const txt2 = json2.choices?.[0]?.message?.content || '';
-        const match2 = txt2.match(/\[.*\]/s);
-        if (match2) produtos = JSON.parse(match2[0]);
-      } catch(e2) {
-        throw new Error('Não foi possível processar o PDF: ' + e2.message);
+        const json = await resp.json();
+        if (json.error) throw new Error('OpenAI: ' + json.error.message);
+        const txt = json.choices?.[0]?.message?.content || '';
+        // Extrair JSON do texto (pode ter markdown ```json)
+        const clean = txt.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+        const match = clean.match(/\[.*\]/s);
+        if (match) {
+          const loteProds = JSON.parse(match[0]);
+          todosProdutos = todosProdutos.concat(loteProds);
+        }
+      } catch(loteErr) {
+        console.warn('Erro no lote ' + l + ':', loteErr);
       }
     }
 
+    // Deduplicar por SKU
+    const vistos = new Set();
+    const produtos = todosProdutos.filter(p => {
+      if (!p || !p.nome) return false;
+      const key = (p.sku || p.nome).toString().trim().toLowerCase();
+      if (vistos.has(key)) return false;
+      vistos.add(key); return true;
+    });
+
+    setStatus(`✅ ${produtos.length} produtos encontrados!`, 95);
+
     if (!produtos || produtos.length === 0) {
-      throw new Error('Nenhum produto encontrado no catálogo. Verifique se o PDF contém texto legível.');
+      throw new Error('Nenhum produto encontrado. Tente com um PDF diferente ou verifique se o arquivo contém tabelas de produtos com códigos.');
     }
 
     // Adicionar categoria e industriaId
@@ -2981,18 +3031,159 @@ async function catalogoImportarSelecionados() {
     return chk && chk.checked;
   });
   if (selecionados.length === 0) { toast('Selecione ao menos um produto!'); return; }
-  let importados = 0;
-  for (const p of selecionados) {
-    await addDoc_('produtos', {
-      nome: p.nome, sku: p.sku, descricao: p.descricao,
-      preco: p.preco, unidade: p.unidade, categoria: p.categoria,
-      industriaId: p.industriaId
-    });
-    importados++;
+
+  const indId = selecionados[0]?.industriaId || '';
+  const indNome = indId ? (STATE.industrias.find(i=>i.id===indId)||{}).nome || '' : '';
+
+  // Obter o btn e mostrar progresso
+  const btn = document.querySelector('#modal-catalogo .btn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Indexando...'; }
+
+  try {
+    // 1. Salvar na coleção produtos (para listagem)
+    let importados = 0;
+    for (const p of selecionados) {
+      await addDoc_('produtos', {
+        nome: p.nome, sku: p.sku, descricao: p.descricao, medida: p.medida || '',
+        preco: p.preco, unidade: p.unidade, categoria: p.categoria,
+        industriaId: p.industriaId
+      });
+      importados++;
+    }
+
+    // 2. Indexar TODOS os produtos extraídos no catalogo_index (não apenas os selecionados)
+    //    Isso permite busca mesmo de produtos não cadastrados ainda
+    if (btn) btn.textContent = '⏳ Salvando índice no Firebase...';
+    const totalIndexados = await indexarCatalogoNoFirestore(catalogoProdutosExtraidos, indId, indNome);
+
+    fecharModal('modal-catalogo');
+    toast(`✅ ${importados} produto(s) cadastrado(s) e ${totalIndexados} itens indexados no catálogo!`);
+    renderProdutos();
+  } catch(e) {
+    toast('❌ Erro ao importar: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Importar Selecionados'; }
   }
-  fecharModal('modal-catalogo');
-  toast(`✅ ${importados} produto(s) importado(s) com sucesso!`);
-  renderProdutos();
+}
+
+// =====================================================
+// BUSCA NO CATÁLOGO (FIRESTORE INDEX)
+// =====================================================
+let _buscaCatalogoTimer = null;
+
+async function buscarNoCatalogo(codigo) {
+  const sgEl = document.getElementById('catalogo-sugestoes');
+  const stEl = document.getElementById('catalogo-busca-status');
+  if (!sgEl || !stEl) return;
+
+  // Limpar timer anterior (debounce 400ms)
+  clearTimeout(_buscaCatalogoTimer);
+  const q = (codigo || '').trim();
+
+  if (q.length < 2) {
+    sgEl.style.display = 'none'; sgEl.innerHTML = '';
+    stEl.textContent = '';
+    return;
+  }
+
+  _buscaCatalogoTimer = setTimeout(async () => {
+    const idx = STATE.catalogoIndex || [];
+    if (idx.length === 0) {
+      stEl.textContent = '⚠️ Nenhum catálogo indexado. Importe um PDF na tela Produtos.';
+      sgEl.style.display = 'none';
+      return;
+    }
+
+    const ql = q.toLowerCase();
+    const resultados = idx.filter(p => {
+      const sku = (p.sku || '').toLowerCase();
+      const nome = (p.nome || '').toLowerCase();
+      return sku.startsWith(ql) || sku.includes(ql) || nome.includes(ql);
+    }).slice(0, 10);
+
+    if (resultados.length === 0) {
+      stEl.textContent = '🔍 Nenhum resultado no catálogo para "' + q + '"';
+      sgEl.style.display = 'none';
+      return;
+    }
+
+    stEl.textContent = '🔍 ' + resultados.length + ' resultado(s) encontrado(s) no catálogo';
+    sgEl.innerHTML = resultados.map((p, i) => `
+      <div onclick="selecionarDoCatalogo(${i})" data-idx="${i}" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--card-border);transition:background 0.15s;"
+        onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="background:var(--primary);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;">${p.sku || '?'}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nome || ''}</span>
+          ${p.medida ? `<span style="font-size:11px;color:var(--text-muted);flex-shrink:0;">${p.medida}</span>` : ''}
+        </div>
+        ${p.descricao ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.descricao}</div>` : ''}
+        <div style="font-size:10px;color:var(--primary);margin-top:2px;">${p.industriaNome || ''} ${p.preco > 0 ? '· R$ ' + parseFloat(p.preco).toFixed(2) : ''}</div>
+      </div>
+    `).join('');
+    // Guardar resultados para seleção
+    window._catalogoBuscaResultados = resultados;
+    sgEl.style.display = 'block';
+  }, 350);
+}
+
+function selecionarDoCatalogo(idx) {
+  const resultados = window._catalogoBuscaResultados || [];
+  const p = resultados[idx];
+  if (!p) return;
+
+  // Preencher campos do modal de produto
+  document.getElementById('produto-sku').value = p.sku || '';
+  document.getElementById('produto-nome').value = p.nome || '';
+  document.getElementById('produto-desc').value = p.descricao || '';
+  if (document.getElementById('produto-medida')) document.getElementById('produto-medida').value = p.medida || '';
+  if (p.preco > 0) document.getElementById('produto-preco').value = p.preco;
+  if (p.unidade) document.getElementById('produto-unidade').value = p.unidade;
+  if (p.industriaId) popularSelectIndustriasProduto(p.industriaId);
+
+  // Fechar sugestões
+  const sgEl = document.getElementById('catalogo-sugestoes');
+  if (sgEl) { sgEl.style.display = 'none'; sgEl.innerHTML = ''; }
+  const stEl = document.getElementById('catalogo-busca-status');
+  if (stEl) stEl.textContent = '✅ Produto preenchido do catálogo!';
+}
+
+// Fechar sugestões ao clicar fora
+document.addEventListener('click', e => {
+  const sgEl = document.getElementById('catalogo-sugestoes');
+  if (sgEl && !sgEl.contains(e.target) && e.target.id !== 'produto-sku') {
+    sgEl.style.display = 'none';
+  }
+});
+
+// Função para indexar PDF no Firestore (chamada pelo importador)
+async function indexarCatalogoNoFirestore(produtos, industriaId, industriaNome) {
+  if (!produtos || produtos.length === 0) return;
+  const LOTE_FIRESTORE = 400; // Firestore batch limit é 500
+  let total = 0;
+  for (let i = 0; i < produtos.length; i += LOTE_FIRESTORE) {
+    const lote = produtos.slice(i, i + LOTE_FIRESTORE);
+    const batch = db.batch();
+    for (const p of lote) {
+      const skuKey = (p.sku || p.nome || '').toString().trim().replace(/[^a-zA-Z0-9._\-]/g, '_');
+      const docId = industriaId + '_' + skuKey + '_' + Math.random().toString(36).slice(2,6);
+      const ref = db.collection('catalogo_index').doc(docId);
+      batch.set(ref, {
+        sku: p.sku || '',
+        nome: p.nome || '',
+        descricao: p.descricao || '',
+        medida: p.medida || '',
+        preco: parseFloat(p.preco) || 0,
+        unidade: p.unidade || 'UN',
+        categoria: p.categoria || '',
+        industriaId: industriaId || '',
+        industriaNome: industriaNome || '',
+        indexadoEm: new Date().toISOString()
+      });
+      total++;
+    }
+    await batch.commit();
+  }
+  return total;
 }
 
 // =====================================================
