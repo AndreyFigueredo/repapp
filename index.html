@@ -12,6 +12,8 @@
 <!-- Importador Inteligente FASE 2 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/7.0.0/fuse.min.js"></script>
+<!-- Importador Inteligente FASE 3: OCR + PDF -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
 /* =====================================================
@@ -989,6 +991,41 @@ body.dark .badge-futuro { color: #7ab4f5; }
   overflow-y: auto; background: var(--bg2);
   border-radius: 8px; padding: 8px;
 }
+
+/* =====================================================
+   FASE 3: OCR + PDF PIPELINE
+   ===================================================== */
+.imp-type-tabs {
+  display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.imp-type-tab {
+  flex: 1; min-width: 80px; padding: 10px 8px;
+  border: 2px solid var(--card-border); border-radius: 10px;
+  background: var(--bg2); cursor: pointer;
+  text-align: center; font-size: 12px; font-weight: 700;
+  color: var(--text-muted); transition: all 0.2s;
+}
+.imp-type-tab.active {
+  border-color: var(--primary); background: var(--primary-pale);
+  color: var(--primary);
+}
+.imp-type-tab:hover { border-color: var(--primary-light); color: var(--primary); }
+
+.imp-preview-img {
+  max-width: 100%; max-height: 220px;
+  border-radius: 10px; border: 2px solid var(--card-border);
+  object-fit: contain; display: block; margin: 0 auto 10px;
+}
+
+.ocr-conf-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg2); overflow: hidden; margin-top: 4px;
+}
+.ocr-conf-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--danger), var(--warning), var(--success));
+  transition: width 0.4s;
+}
 </style>
 </head>
 <body>
@@ -1325,27 +1362,56 @@ body.dark .badge-futuro { color: #7ab4f5; }
       </div>
     </div>
 
-    <!-- IMPORTADOR DE PEDIDOS — FASE 2 -->
+    <!-- IMPORTADOR DE PEDIDOS — FASE 2 + 3 -->
     <div class="screen" id="screen-importador">
 
       <div class="card" style="margin-bottom:10px;">
         <div style="font-size:16px;font-weight:800;color:var(--primary);margin-bottom:4px;">📥 Importador de Pedidos</div>
-        <div style="font-size:12px;color:var(--text-muted);">Envie uma planilha de pedido (Excel/CSV) e o sistema reconhece os produtos automaticamente usando o banco cadastrado.</div>
+        <div style="font-size:12px;color:var(--text-muted);">Envie planilha, PDF, foto ou print de pedido. O sistema reconhece os produtos automaticamente.</div>
       </div>
 
       <!-- PASSO 1: Upload -->
       <div id="imp-step1">
+
+        <!-- Abas de tipo de arquivo -->
+        <div class="imp-type-tabs">
+          <div class="imp-type-tab active" id="tab-excel" onclick="impSetTab('excel')">📊<br>Excel/CSV</div>
+          <div class="imp-type-tab" id="tab-pdf" onclick="impSetTab('pdf')">📄<br>PDF</div>
+          <div class="imp-type-tab" id="tab-imagem" onclick="impSetTab('imagem')">🖼️<br>Imagem</div>
+          <div class="imp-type-tab" id="tab-camera" onclick="impSetTab('camera')">📸<br>Câmera</div>
+        </div>
+
         <div class="imp-dropzone" id="imp-dropzone"
              ondragover="event.preventDefault();this.classList.add('drag')"
              ondragleave="this.classList.remove('drag')"
              ondrop="impHandleDrop(event)">
-          <div style="font-size:36px;margin-bottom:8px;">📂</div>
-          <div style="font-weight:700;font-size:14px;color:var(--primary);">Arraste a planilha de pedido aqui</div>
-          <div style="font-size:12px;color:var(--text-muted);margin:4px 0 10px;">XLS · XLSX · CSV</div>
-          <label class="btn-submit" style="cursor:pointer;padding:8px 20px;font-size:13px;display:inline-block;">
-            Selecionar Arquivo
-            <input type="file" id="imp-file-input" accept=".xls,.xlsx,.csv" style="display:none;" onchange="impHandleFile(event)">
-          </label>
+          <div style="font-size:36px;margin-bottom:8px;" id="imp-drop-icon">📂</div>
+          <div style="font-weight:700;font-size:14px;color:var(--primary);" id="imp-drop-title">Arraste a planilha de pedido aqui</div>
+          <div style="font-size:12px;color:var(--text-muted);margin:4px 0 10px;" id="imp-drop-sub">XLS · XLSX · CSV</div>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+            <label class="btn-submit" style="cursor:pointer;padding:8px 20px;font-size:13px;display:inline-block;">
+              Selecionar Arquivo
+              <input type="file" id="imp-file-input" accept=".xls,.xlsx,.csv,.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif" style="display:none;" onchange="impHandleFile(event)">
+            </label>
+            <label class="btn-submit" id="btn-camera-label" style="cursor:pointer;padding:8px 20px;font-size:13px;display:none;background:var(--success);">
+              📸 Tirar Foto
+              <input type="file" id="imp-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="impHandleFile(event)">
+            </label>
+          </div>
+        </div>
+
+        <!-- Preview de imagem/PDF -->
+        <div id="imp-preview-area" style="display:none;" class="card">
+          <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:8px;">🔍 Preview do Arquivo</div>
+          <img id="imp-preview-img" class="imp-preview-img" src="" alt="Preview">
+          <div id="imp-preview-info" style="font-size:11px;color:var(--text-muted);text-align:center;"></div>
+          <div id="imp-ocr-conf-area" style="display:none;margin-top:8px;">
+            <div style="font-size:11px;color:var(--text-muted);display:flex;justify-content:space-between;">
+              <span>Qualidade OCR estimada</span>
+              <span id="imp-ocr-conf-pct">0%</span>
+            </div>
+            <div class="ocr-conf-bar"><div class="ocr-conf-fill" id="imp-ocr-conf-fill" style="width:0%;"></div></div>
+          </div>
         </div>
         <div class="card" id="imp-config-card" style="display:none;">
           <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:10px;">⚙️ Configuração</div>
@@ -1376,7 +1442,34 @@ body.dark .badge-futuro { color: #7ab4f5; }
             <input class="form-control" type="number" id="imp-start-row" value="1" min="0" max="20" style="width:80px;">
             <span style="font-size:11px;color:var(--text-muted);margin-left:6px;">(0 = primeira linha)</span>
           </div>
-          <button onclick="impProcessar()" class="btn-submit" style="width:100%;margin-top:8px;">🔍 Processar e Fazer Matching</button>
+          <button onclick="impProcessar()" class="btn-submit" style="width:100%;margin-top:8px;" id="btn-processar-excel">🔍 Processar e Fazer Matching</button>
+        </div>
+
+        <!-- Config OCR (PDF/Imagem) -->
+        <div class="card" id="imp-ocr-card" style="display:none;">
+          <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:10px;">⚙️ Configuração OCR</div>
+          <div class="form-group">
+            <label class="form-label">Cliente do Pedido</label>
+            <select class="form-control" id="imp-ocr-cliente"><option value="">Selecionar cliente...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Idioma do documento</label>
+            <select class="form-control" id="imp-ocr-lang">
+              <option value="por">Português (Brasil)</option>
+              <option value="eng">Inglês</option>
+              <option value="por+eng">Português + Inglês</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo de conteúdo</label>
+            <select class="form-control" id="imp-ocr-tipo">
+              <option value="auto">Detectar automaticamente</option>
+              <option value="tabela">Tabela (código + qtd)</option>
+              <option value="lista">Lista de produtos</option>
+              <option value="whatsapp">Print WhatsApp</option>
+            </select>
+          </div>
+          <button onclick="impProcessarOCR()" class="btn-submit" style="width:100%;margin-top:8px;">🔍 Extrair Texto e Fazer Matching</button>
         </div>
       </div>
 
@@ -3586,10 +3679,277 @@ function compartilharWhatsApp(pid) {
 })();
 
 // =====================================================
-// IMPORTADOR DE PEDIDOS — FASE 2
+// IMPORTADOR DE PEDIDOS — FASE 2 + 3
 // =====================================================
 let impWorkbook = null;
 let impResultados = [];
+let impTabAtual = 'excel';      // 'excel' | 'pdf' | 'imagem' | 'camera'
+let impArquivoAtual = null;     // File atual
+let impTextoOCR = '';           // Texto extraído pelo OCR/PDF
+
+// ---- FASE 3: Gerenciamento de abas ----
+function impSetTab(tab) {
+  impTabAtual = tab;
+  ['excel','pdf','imagem','camera'].forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+  const icon  = document.getElementById('imp-drop-icon');
+  const title = document.getElementById('imp-drop-title');
+  const sub   = document.getElementById('imp-drop-sub');
+  const camBtn = document.getElementById('btn-camera-label');
+  const fileInput = document.getElementById('imp-file-input');
+
+  if (tab === 'excel') {
+    if (icon)  icon.textContent  = '📂';
+    if (title) title.textContent = 'Arraste a planilha de pedido aqui';
+    if (sub)   sub.textContent   = 'XLS · XLSX · CSV';
+    if (fileInput) fileInput.accept = '.xls,.xlsx,.csv';
+    if (camBtn) camBtn.style.display = 'none';
+  } else if (tab === 'pdf') {
+    if (icon)  icon.textContent  = '📄';
+    if (title) title.textContent = 'Arraste o PDF do pedido ou catálogo aqui';
+    if (sub)   sub.textContent   = 'PDF (texto selecionável ou escaneado)';
+    if (fileInput) fileInput.accept = '.pdf';
+    if (camBtn) camBtn.style.display = 'none';
+  } else if (tab === 'imagem') {
+    if (icon)  icon.textContent  = '🖼️';
+    if (title) title.textContent = 'Arraste a imagem do pedido aqui';
+    if (sub)   sub.textContent   = 'PNG · JPG · WEBP · BMP';
+    if (fileInput) fileInput.accept = '.png,.jpg,.jpeg,.webp,.bmp,.gif';
+    if (camBtn) camBtn.style.display = 'none';
+  } else if (tab === 'camera') {
+    if (icon)  icon.textContent  = '📸';
+    if (title) title.textContent = 'Tire uma foto do pedido';
+    if (sub)   sub.textContent   = 'Use a câmera do celular';
+    if (fileInput) fileInput.accept = 'image/*';
+    if (camBtn) camBtn.style.display = 'inline-block';
+  }
+  // Limpa preview e configs
+  document.getElementById('imp-preview-area').style.display = 'none';
+  document.getElementById('imp-config-card').style.display = 'none';
+  document.getElementById('imp-ocr-card').style.display = 'none';
+  impArquivoAtual = null;
+}
+
+// ---- FASE 3: Detecção automática de tipo de arquivo ----
+function impDetectarTipo(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const mime = file.type.toLowerCase();
+  if (['xls','xlsx','csv'].includes(ext) || mime.includes('spreadsheet') || mime.includes('csv')) return 'excel';
+  if (ext === 'pdf' || mime === 'application/pdf') return 'pdf';
+  if (['png','jpg','jpeg','webp','bmp','gif'].includes(ext) || mime.startsWith('image/')) return 'imagem';
+  return 'excel';
+}
+
+// ---- FASE 3: Mostra preview de imagem ----
+function impMostrarPreviewImagem(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('imp-preview-img');
+    img.src = e.target.result;
+    document.getElementById('imp-preview-area').style.display = 'block';
+    document.getElementById('imp-preview-info').textContent = file.name + ' — ' + (file.size / 1024).toFixed(0) + ' KB';
+    document.getElementById('imp-ocr-conf-area').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ---- FASE 3: Extrai texto de PDF com pdf.js ----
+async function impExtrairTextoPDF(file) {
+  impLog('📄 Carregando PDF...');
+  // Carrega pdf.js se necessário
+  if (!window.pdfjsLib) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); };
+      s.onerror = () => rej(new Error('Falha ao carregar pdf.js'));
+      document.head.appendChild(s);
+    });
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  impLog('ℹ️ PDF com ' + pdfDoc.numPages + ' página(s)');
+  impProgress(20, 'Extraindo texto do PDF...');
+
+  let textoTotal = '';
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    const page = await pdfDoc.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    textoTotal += pageText + '\n';
+    impProgress(20 + Math.round((i / pdfDoc.numPages) * 30), 'Página ' + i + '/' + pdfDoc.numPages);
+  }
+
+  // Verifica se o PDF tem texto selecionável
+  const textoLimpo = textoTotal.replace(/\s+/g, ' ').trim();
+  if (textoLimpo.length > 50) {
+    impLog('✅ PDF com texto selecionável (' + textoLimpo.length + ' caracteres)');
+    return textoLimpo;
+  } else {
+    impLog('⚠️ PDF escaneado detectado — iniciando OCR...');
+    // PDF escaneado: renderiza primeira página como imagem e faz OCR
+    const page = await pdfDoc.getPage(1);
+    const viewport = page.getViewport({ scale: 2.0 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width; canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const imgFile = new File([blob], 'page1.png', { type: 'image/png' });
+    return await impExtrairTextoOCR(imgFile);
+  }
+}
+
+// ---- FASE 3: OCR com Tesseract.js ----
+async function impExtrairTextoOCR(file) {
+  const lang = document.getElementById('imp-ocr-lang') ? document.getElementById('imp-ocr-lang').value : 'por';
+  impLog('🔍 Iniciando OCR (idioma: ' + lang + ')...');
+  impProgress(30, 'Executando OCR...');
+
+  const worker = await Tesseract.createWorker(lang, 1, {
+    logger: m => {
+      if (m.status === 'recognizing text') {
+        const pct = Math.round(m.progress * 100);
+        impProgress(30 + Math.round(m.progress * 30), 'OCR: ' + pct + '%');
+        // Atualiza barra de qualidade
+        const confFill = document.getElementById('imp-ocr-conf-fill');
+        const confPct  = document.getElementById('imp-ocr-conf-pct');
+        if (confFill) confFill.style.width = pct + '%';
+        if (confPct)  confPct.textContent  = pct + '%';
+      }
+    }
+  });
+
+  const result = await worker.recognize(file);
+  await worker.terminate();
+
+  const conf = Math.round(result.data.confidence);
+  impLog('✅ OCR concluído — confiança média: ' + conf + '%');
+
+  // Atualiza indicador visual
+  const confFill = document.getElementById('imp-ocr-conf-fill');
+  const confPct  = document.getElementById('imp-ocr-conf-pct');
+  const confArea = document.getElementById('imp-ocr-conf-area');
+  if (confFill) confFill.style.width = conf + '%';
+  if (confPct)  confPct.textContent  = conf + '%';
+  if (confArea) confArea.style.display = 'block';
+
+  return result.data.text;
+}
+
+// ---- FASE 3: Parser de texto bruto (OCR/PDF) ----
+function impParsearTexto(texto, tipo) {
+  const linhas = texto.split(/[\n\r]+/).map(l => l.trim()).filter(l => l.length > 1);
+  const itens = [];
+
+  // Padrões de detecção
+  // Tabela: código \t qtd | código espaços qtd
+  const reTabela = /^([A-Za-z0-9\.\-\/]+)\s+(.+?)\s+(\d+[\.,]?\d*)\s*$/;
+  // Lista simples: código - descrição x qtd
+  const reLista  = /^([A-Za-z0-9\.\-\/]+)[\s\-:]+(.+?)\s+[xX]\s*(\d+)/;
+  // WhatsApp: "produto: qtd" ou "produto - qtd"
+  const reWhats  = /^(.+?)\s*[:\-]\s*(\d+)\s*$/;
+  // Só código e qtd: "5.0031 10"
+  const reCodQtd = /^([A-Za-z0-9\.\-\/]{3,20})\s+(\d{1,5})$/;
+
+  linhas.forEach(linha => {
+    // Ignora linhas que são claramente cabeçalho ou lixo
+    if (/^(cód|cod|ref|item|produto|descri|qtd|quant|total|preço|preco|valor|un|obs)/i.test(linha)) return;
+    if (linha.length < 3 || /^[\-=_\*\.]{3,}$/.test(linha)) return;
+
+    let cod = '', desc = '', qtd = 1;
+    let matched = false;
+
+    // Tenta padrão de tabela
+    let m = linha.match(reTabela);
+    if (m) { cod = m[1]; desc = m[2]; qtd = parseFloat(m[3].replace(',','.')) || 1; matched = true; }
+
+    // Tenta lista
+    if (!matched) { m = linha.match(reLista); if (m) { cod = m[1]; desc = m[2]; qtd = parseFloat(m[3]) || 1; matched = true; } }
+
+    // Tenta código + qtd simples
+    if (!matched) { m = linha.match(reCodQtd); if (m) { cod = m[1]; qtd = parseFloat(m[2]) || 1; matched = true; } }
+
+    // Tenta WhatsApp (só se tipo for whatsapp ou auto)
+    if (!matched && (tipo === 'whatsapp' || tipo === 'auto')) {
+      m = linha.match(reWhats);
+      if (m && isNaN(parseFloat(m[1]))) { desc = m[1]; qtd = parseFloat(m[2]) || 1; matched = true; }
+    }
+
+    // Linha sem padrão claro: trata como descrição com qtd 1
+    if (!matched && linha.length >= 4) { desc = linha; qtd = 1; matched = true; }
+
+    if (matched && (cod || desc)) {
+      itens.push({ codPedido: cod, descPedido: desc, qtdPedido: qtd });
+    }
+  });
+
+  return itens;
+}
+
+// ---- FASE 3: Processa PDF ou Imagem via OCR ----
+async function impProcessarOCR() {
+  if (!impArquivoAtual) { toast('❌ Selecione um arquivo primeiro!'); return; }
+
+  const clienteId = document.getElementById('imp-ocr-cliente').value;
+  // Sincroniza cliente com o select da FASE 2
+  const selExcel = document.getElementById('imp-cliente-select');
+  if (selExcel && clienteId) selExcel.value = clienteId;
+
+  // Mostra tela de processamento
+  document.getElementById('imp-step1').style.display = 'none';
+  document.getElementById('imp-step2').style.display = 'block';
+  document.getElementById('imp-step3').style.display = 'none';
+  document.getElementById('imp-log').innerHTML = '';
+  impProgress(5, 'Preparando...');
+  await new Promise(r => setTimeout(r, 50));
+
+  try {
+    const tipo = document.getElementById('imp-ocr-tipo').value;
+    let textoExtraido = '';
+
+    if (impTabAtual === 'pdf') {
+      textoExtraido = await impExtrairTextoPDF(impArquivoAtual);
+    } else {
+      textoExtraido = await impExtrairTextoOCR(impArquivoAtual);
+    }
+
+    impTextoOCR = textoExtraido;
+    impLog('📝 Texto extraído: ' + textoExtraido.length + ' caracteres');
+    impProgress(65, 'Analisando texto...');
+    await new Promise(r => setTimeout(r, 30));
+
+    // Parseia o texto
+    const itensBrutos = impParsearTexto(textoExtraido, tipo);
+    impLog('ℹ️ ' + itensBrutos.length + ' linhas de produto detectadas');
+
+    if (itensBrutos.length === 0) {
+      impLog('⚠️ Nenhum produto detectado. Tente ajustar o tipo de conteúdo.');
+      impProgress(100, 'Concluído com avisos');
+      document.getElementById('imp-step2').style.display = 'none';
+      document.getElementById('imp-step1').style.display = 'block';
+      return;
+    }
+
+    // Faz matching usando o mesmo engine da FASE 2
+    impProgress(70, 'Fazendo matching de produtos...');
+    const { resultados, nOk, nWarn, nErr } = await impFazerMatching(itensBrutos);
+    impResultados = resultados;
+
+    impLog('✅ Matching concluído: ' + nOk + ' exatos, ' + nWarn + ' parciais, ' + nErr + ' não encontrados');
+    impProgress(100, 'Concluído!');
+    await new Promise(r => setTimeout(r, 400));
+    impRenderResultado(nOk, nWarn, nErr);
+
+  } catch(err) {
+    impLog('❌ Erro: ' + err.message);
+    impProgress(100, 'Erro!');
+    toast('❌ ' + err.message);
+    document.getElementById('imp-step2').style.display = 'none';
+    document.getElementById('imp-step1').style.display = 'block';
+  }
+}
 
 // Normaliza texto para matching
 function normalizeText(t) {
@@ -3630,29 +3990,61 @@ function impHandleFile(e) {
   if (file) impCarregarArquivo(file);
 }
 
-// Carrega e parseia o arquivo
+// Carrega e parseia o arquivo (FASE 2 + 3)
 function impCarregarArquivo(file) {
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      impWorkbook = XLSX.read(data, { type: 'array' });
-      // Preenche select de planilhas
-      const sheetSel = document.getElementById('imp-sheet-select');
-      sheetSel.innerHTML = '';
-      impWorkbook.SheetNames.forEach(name => {
+  impArquivoAtual = file;
+  const tipo = impDetectarTipo(file);
+
+  // Auto-seleciona a aba correta
+  if (tipo !== impTabAtual) impSetTab(tipo);
+
+  if (tipo === 'excel') {
+    // FASE 2: Excel/CSV
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        impWorkbook = XLSX.read(data, { type: 'array' });
+        const sheetSel = document.getElementById('imp-sheet-select');
+        sheetSel.innerHTML = '';
+        impWorkbook.SheetNames.forEach(name => {
+          const o = document.createElement('option');
+          o.value = name; o.textContent = name;
+          sheetSel.appendChild(o);
+        });
+        impLoadSheet();
+        document.getElementById('imp-config-card').style.display = 'block';
+        document.getElementById('imp-ocr-card').style.display = 'none';
+        toast('✅ Planilha carregada: ' + file.name);
+      } catch(err) {
+        toast('❌ Erro ao ler planilha: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    // FASE 3: PDF ou Imagem — mostra preview e card OCR
+    document.getElementById('imp-config-card').style.display = 'none';
+    document.getElementById('imp-ocr-card').style.display = 'block';
+    // Preenche select de clientes no card OCR
+    const selOcr = document.getElementById('imp-ocr-cliente');
+    if (selOcr) {
+      selOcr.innerHTML = '<option value="">Selecionar cliente...</option>';
+      (STATE.clientes || []).forEach(c => {
         const o = document.createElement('option');
-        o.value = name; o.textContent = name;
-        sheetSel.appendChild(o);
+        o.value = c.id; o.textContent = c.nome;
+        selOcr.appendChild(o);
       });
-      impLoadSheet();
-      document.getElementById('imp-config-card').style.display = 'block';
-      toast('✅ Arquivo carregado: ' + file.name);
-    } catch(err) {
-      toast('❌ Erro ao ler arquivo: ' + err.message);
     }
-  };
-  reader.readAsArrayBuffer(file);
+    if (tipo === 'imagem') {
+      impMostrarPreviewImagem(file);
+    } else if (tipo === 'pdf') {
+      // Para PDF mostra ícone em vez de preview
+      document.getElementById('imp-preview-img').src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="80">📄</text></svg>';
+      document.getElementById('imp-preview-area').style.display = 'block';
+      document.getElementById('imp-preview-info').textContent = file.name + ' — ' + (file.size / 1024).toFixed(0) + ' KB';
+    }
+    toast('✅ Arquivo carregado: ' + file.name + ' — pronto para OCR');
+  }
 }
 
 // Carrega a planilha selecionada e detecta colunas
@@ -3708,6 +4100,87 @@ function impProgress(pct, txt) {
   const lbl = document.getElementById('imp-status-text');
   if (bar) bar.style.width = pct + '%';
   if (lbl && txt) lbl.textContent = txt;
+}
+
+// Engine de matching reutilizável (FASE 2 + 3)
+async function impFazerMatching(itensBrutos) {
+  const produtos = STATE.produtos || [];
+  if (produtos.length === 0) {
+    impLog('⚠️ Nenhum produto cadastrado no banco. Cadastre produtos primeiro.');
+    return { resultados: [], nOk: 0, nWarn: 0, nErr: 0 };
+  }
+
+  impProgress(70, 'Construindo índice de busca...');
+  await new Promise(r => setTimeout(r, 30));
+
+  // Fuse.js com threshold mais permissivo para OCR (erros de reconhecimento)
+  const fuseIndex = new Fuse(produtos, {
+    keys: [
+      { name: 'nome',      weight: 0.5 },
+      { name: 'sku',       weight: 0.4 },
+      { name: 'descricao', weight: 0.1 }
+    ],
+    threshold: 0.50,   // mais permissivo que FASE 2 para tolerar erros de OCR
+    includeScore: true,
+    ignoreLocation: true,
+    distance: 200      // tolera palavras em posições diferentes
+  });
+
+  const skuMap = {};
+  produtos.forEach(p => { if (p.sku) skuMap[normalizeText(p.sku)] = p; });
+
+  const resultados = [];
+  let nOk = 0, nWarn = 0, nErr = 0;
+
+  for (let i = 0; i < itensBrutos.length; i++) {
+    const { codPedido, descPedido, qtdPedido } = itensBrutos[i];
+    let prodEncontrado = null, score = 0, metodo = '';
+
+    // 1. Código exato
+    if (codPedido) {
+      const normCod = normalizeText(codPedido);
+      if (skuMap[normCod]) { prodEncontrado = skuMap[normCod]; score = 1.0; metodo = 'código exato'; }
+    }
+
+    // 2. Descrição fuzzy (tolerante a erros OCR)
+    if (!prodEncontrado && descPedido) {
+      const results = fuseIndex.search(descPedido);
+      if (results.length > 0) {
+        const best = results[0];
+        score = Math.round((1 - best.score) * 100) / 100;
+        if (score >= 0.50) { prodEncontrado = best.item; metodo = 'descrição (' + Math.round(score * 100) + '%)'; }
+      }
+    }
+
+    // 3. Código parcial
+    if (!prodEncontrado && codPedido) {
+      const normCod = normalizeText(codPedido);
+      const partial = produtos.find(p => p.sku && normalizeText(p.sku).includes(normCod));
+      if (partial) { prodEncontrado = partial; score = 0.7; metodo = 'código parcial'; }
+    }
+
+    // 4. Matching por tokens (para OCR com palavras quebradas)
+    if (!prodEncontrado && descPedido && descPedido.length > 3) {
+      const tokens = normalizeText(descPedido).split(' ').filter(t => t.length > 3);
+      if (tokens.length > 0) {
+        const tokenResults = fuseIndex.search(tokens.join(' '));
+        if (tokenResults.length > 0) {
+          const best = tokenResults[0];
+          score = Math.round((1 - best.score) * 100) / 100;
+          if (score >= 0.45) { prodEncontrado = best.item; metodo = 'tokens OCR (' + Math.round(score * 100) + '%)'; }
+        }
+      }
+    }
+
+    resultados.push({ codPedido, descPedido, qtdPedido, prodEncontrado, score, metodo });
+    if (prodEncontrado && score >= 0.85)      nOk++;
+    else if (prodEncontrado && score >= 0.50) nWarn++;
+    else                                      nErr++;
+
+    impProgress(70 + Math.round((i / itensBrutos.length) * 25), 'Matching ' + (i+1) + '/' + itensBrutos.length + '...');
+    if (i % 10 === 0) await new Promise(r => setTimeout(r, 10));
+  }
+  return { resultados, nOk, nWarn, nErr };
 }
 
 // Processa o arquivo e faz o matching
