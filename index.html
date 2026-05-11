@@ -1703,7 +1703,9 @@ function initFirebase(cfg) {
   try { firebase.initializeApp(cfg); } catch(e) {}
   db = firebase.firestore();
   auth = firebase.auth();
-  db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+  // Forçar leitura sempre do servidor (sem cache local) para garantir sincronização entre dispositivos
+  db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
+  // NÃO usar enablePersistence pois causa dessincronização entre dispositivos
 
   let dadosCarregados = false;
   auth.onAuthStateChanged(user => {
