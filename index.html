@@ -1381,14 +1381,28 @@ body.dark .badge-futuro { color: #7ab4f5; }
   <div class="modal-sheet">
     <div class="modal-header"><span class="modal-title" id="modal-industria-title">🏭 Nova Indústria</span><button class="modal-close" onclick="fecharModal('modal-industria')">✕</button></div>
     <input type="hidden" id="industria-edit-id">
+
+    <!-- BUSCA POR CNPJ -->
+    <div class="form-group">
+      <label class="form-label">CNPJ <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(preenche os dados automaticamente)</span></label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="form-control" id="ind-cnpj" placeholder="00.000.000/0001-00" maxlength="18" oninput="mascaraCNPJ(this)" style="flex:1;">
+        <button onclick="buscarCNPJ()" id="btn-buscar-cnpj" style="padding:10px 14px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+          🔍 Buscar
+        </button>
+      </div>
+      <div id="cnpj-status" style="font-size:12px;margin-top:5px;min-height:16px;"></div>
+    </div>
+
     <div class="form-row">
       <div class="form-group"><label class="form-label">Nome / Marca *</label><input type="text" class="form-control" id="ind-nome" placeholder="Nome da indústria"></div>
-      <div class="form-group"><label class="form-label">CNPJ</label><input type="text" class="form-control" id="ind-cnpj" placeholder="00.000.000/0001-00"></div>
+      <div class="form-group"><label class="form-label">Razão Social</label><input type="text" class="form-control" id="ind-razao" placeholder="Razão Social"></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Telefone</label><input type="tel" class="form-control" id="ind-tel" placeholder="(00) 00000-0000"></div>
       <div class="form-group"><label class="form-label">E-mail</label><input type="email" class="form-control" id="ind-email" placeholder="contato@industria.com"></div>
     </div>
+    <div class="form-group"><label class="form-label">Endereço</label><input type="text" class="form-control" id="ind-endereco" placeholder="Rua, número, bairro"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Cidade</label><input type="text" class="form-control" id="ind-cidade" placeholder="Cidade"></div>
       <div class="form-group"><label class="form-label">UF</label><select class="form-control" id="ind-uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option></select></div>
@@ -2233,13 +2247,78 @@ function renderIndustrias() {
   }).join('');
 }
 
+// Máscara de CNPJ
+function mascaraCNPJ(input) {
+  let v = input.value.replace(/\D/g,'');
+  if (v.length > 14) v = v.slice(0,14);
+  v = v.replace(/(\d{2})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\/)(\d)/,'$1/$3');
+  v = v.replace(/(\.\d{3})\/?(\d{4})(\d)/,'$1/$2-$3');
+  v = v.replace(/(-\d{2})\d+?$/,'$1');
+  input.value = v;
+}
+
+// Busca automática de CNPJ via BrasilAPI
+async function buscarCNPJ() {
+  const cnpjRaw = (document.getElementById('ind-cnpj').value || '').replace(/\D/g,'');
+  const statusEl = document.getElementById('cnpj-status');
+  if (cnpjRaw.length !== 14) {
+    statusEl.innerHTML = '<span style="color:var(--danger,#ef4444)">❌ CNPJ inválido. Informe os 14 dígitos.</span>';
+    return;
+  }
+  const btn = document.getElementById('btn-buscar-cnpj');
+  btn.textContent = '⏳ Buscando...';
+  btn.disabled = true;
+  statusEl.innerHTML = '<span style="color:var(--text-muted)">Consultando Receita Federal...</span>';
+  try {
+    const resp = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjRaw}`);
+    if (!resp.ok) throw new Error('CNPJ não encontrado na Receita Federal.');
+    const d = await resp.json();
+    // Preencher campos
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    // Nome fantasia como nome principal, razão social como secundário
+    if (d.nome_fantasia && d.nome_fantasia.trim()) set('ind-nome', toTitleCase(d.nome_fantasia));
+    else if (d.razao_social) set('ind-nome', toTitleCase(d.razao_social));
+    set('ind-razao', toTitleCase(d.razao_social || ''));
+    // Telefone: preferir ddd_telefone_1
+    const tel1 = (d.ddd_telefone_1||'').replace(/\D/g,'');
+    if (tel1.length >= 10) {
+      const ddd = tel1.slice(0,2), num = tel1.slice(2);
+      set('ind-tel', `(${ddd}) ${num.length===9?num.slice(0,5)+'-'+num.slice(5):num.slice(0,4)+'-'+num.slice(4)}`);
+    }
+    if (d.email) set('ind-email', d.email.toLowerCase());
+    // Endereço
+    const end = [d.logradouro, d.numero, d.bairro].filter(Boolean).map(toTitleCase).join(', ');
+    set('ind-endereco', end);
+    set('ind-cidade', toTitleCase(d.municipio || ''));
+    const ufEl = document.getElementById('ind-uf');
+    if (ufEl && d.uf) ufEl.value = d.uf;
+    // Status
+    const sit = d.descricao_situacao_cadastral || '';
+    const cor = sit === 'ATIVA' ? 'var(--success)' : 'var(--danger,#ef4444)';
+    statusEl.innerHTML = `<span style="color:${cor}">✅ Empresa encontrada! Situação: <strong>${sit}</strong></span>`;
+  } catch(err) {
+    statusEl.innerHTML = `<span style="color:var(--danger,#ef4444)">❌ ${err.message}</span>`;
+  } finally {
+    btn.textContent = '🔍 Buscar';
+    btn.disabled = false;
+  }
+}
+
+function toTitleCase(str) {
+  if (!str) return '';
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function abrirModalIndustria() {
   document.getElementById('industria-edit-id').value = '';
   document.getElementById('modal-industria-title').textContent = '🏭 Nova Indústria';
-  ['ind-nome','ind-cnpj','ind-tel','ind-email','ind-cidade','ind-contato','ind-obs'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['ind-nome','ind-razao','ind-cnpj','ind-tel','ind-email','ind-endereco','ind-cidade','ind-contato','ind-obs'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const ufEl=document.getElementById('ind-uf'); if(ufEl) ufEl.value='';
   const comEl=document.getElementById('ind-comissao'); if(comEl) comEl.value='';
   const frEl=document.getElementById('ind-frete-pct'); if(frEl) frEl.value='';
+  const statusEl=document.getElementById('cnpj-status'); if(statusEl) statusEl.innerHTML='';
   document.getElementById('btn-excluir-industria').style.display='none';
   abrirModal('modal-industria');
 }
@@ -2248,28 +2327,31 @@ function editarIndustria(iid) {
   const i = STATE.industrias.find(x=>x.id===iid); if(!i) return;
   document.getElementById('industria-edit-id').value = iid;
   document.getElementById('modal-industria-title').textContent = '✏️ Editar Indústria';
-  ['nome','cnpj','tel','email','cidade','contato','obs'].forEach(f=>{ const el=document.getElementById('ind-'+f); if(el) el.value=i[f]||''; });
+  ['nome','razao','cnpj','tel','email','endereco','cidade','contato','obs'].forEach(f=>{ const el=document.getElementById('ind-'+f); if(el) el.value=i[f]||''; });
   const ufEl=document.getElementById('ind-uf'); if(ufEl) ufEl.value=i.uf||'';
   const comEl=document.getElementById('ind-comissao'); if(comEl) comEl.value=i.comissao||'';
   const frEl=document.getElementById('ind-frete-pct'); if(frEl) frEl.value=i.frete_pct||'';
+  const statusEl=document.getElementById('cnpj-status'); if(statusEl) statusEl.innerHTML='';
   document.getElementById('btn-excluir-industria').style.display='block';
   abrirModal('modal-industria');
 }
 
 async function salvarIndustria() {
-  const nome    = document.getElementById('ind-nome').value.trim();
-  const cnpj    = document.getElementById('ind-cnpj').value.trim();
-  const tel     = document.getElementById('ind-tel').value.trim();
-  const email   = document.getElementById('ind-email').value.trim();
-  const cidade  = document.getElementById('ind-cidade').value.trim();
-  const uf      = document.getElementById('ind-uf').value;
-  const comissao= parseFloat(document.getElementById('ind-comissao').value)||0;
+  const nome     = document.getElementById('ind-nome').value.trim();
+  const razao    = document.getElementById('ind-razao').value.trim();
+  const cnpj     = document.getElementById('ind-cnpj').value.trim();
+  const tel      = document.getElementById('ind-tel').value.trim();
+  const email    = document.getElementById('ind-email').value.trim();
+  const endereco = document.getElementById('ind-endereco').value.trim();
+  const cidade   = document.getElementById('ind-cidade').value.trim();
+  const uf       = document.getElementById('ind-uf').value;
+  const comissao = parseFloat(document.getElementById('ind-comissao').value)||0;
   const frete_pct= parseFloat(document.getElementById('ind-frete-pct').value)||0;
-  const contato = document.getElementById('ind-contato').value.trim();
-  const obs     = document.getElementById('ind-obs').value.trim();
-  const editId  = document.getElementById('industria-edit-id').value;
+  const contato  = document.getElementById('ind-contato').value.trim();
+  const obs      = document.getElementById('ind-obs').value.trim();
+  const editId   = document.getElementById('industria-edit-id').value;
   if (!nome) { alert('Informe o nome da indústria!'); return; }
-  const data = { nome, cnpj, tel, email, cidade, uf, comissao, frete_pct, contato, obs };
+  const data = { nome, razao, cnpj, tel, email, endereco, cidade, uf, comissao, frete_pct, contato, obs };
   if (editId) {
     await updateDoc_('industrias', editId, data);
     toast('✅ Indústria atualizada!');
