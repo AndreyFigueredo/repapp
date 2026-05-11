@@ -1920,7 +1920,8 @@ body.dark .badge-futuro { color: #7ab4f5; }
 <!-- MODAL: PEDIDO -->
 <div class="modal-overlay" id="modal-pedido">
   <div class="modal-sheet">
-    <div class="modal-header"><span class="modal-title">📦 Novo Pedido</span><button class="modal-close" onclick="fecharModal('modal-pedido')">✕</button></div>
+    <div class="modal-header"><span class="modal-title" id="modal-pedido-title">📦 Novo Pedido</span><button class="modal-close" onclick="fecharModal('modal-pedido')">✕</button></div>
+    <input type="hidden" id="pedido-edit-id">
     <div class="form-group"><label class="form-label">Cliente *</label><select class="form-control" id="pedido-cliente"></select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group"><label class="form-label">Nº do Pedido</label><input type="text" class="form-control" id="pedido-numero" placeholder="Ex: 00123"></div>
@@ -1942,9 +1943,9 @@ body.dark .badge-futuro { color: #7ab4f5; }
     <div class="section-title" style="margin-top:4px;">Produtos do Pedido</div>
     <div class="search-bar" style="margin-bottom:8px;padding:9px 12px;">
       <span>🔍</span>
-      <input type="text" class="search-input" id="pedido-busca-prod" placeholder="Buscar produto para adicionar..." oninput="renderProdutosPicker()">
+      <input type="text" class="search-input" id="pedido-busca-prod" placeholder="Buscar produto para adicionar..." oninput="renderProdutosPicker()" onfocus="renderProdutosPicker()">
     </div>
-    <div id="produtos-picker" style="max-height:160px;overflow-y:auto;margin-bottom:10px;"></div>
+    <div id="produtos-picker" style="max-height:180px;overflow-y:auto;margin-bottom:10px;border-radius:8px;border:1px solid var(--card-border);"></div>
     <div id="itens-pedido-lista"></div>
     <div class="total-bar" id="total-pedido-bar" style="display:none;">
       <span class="total-label">Total do Pedido</span>
@@ -1953,10 +1954,12 @@ body.dark .badge-futuro { color: #7ab4f5; }
 
     <div class="form-group" style="margin-top:12px;"><label class="form-label">Valor Manual (R$) <span style="font-weight:400;font-size:10px;color:var(--text-muted);">— preencha se não usar produtos acima</span></label><input type="number" class="form-control" id="pedido-valor" placeholder="0,00" step="0.01" min="0"></div>
     <div class="form-group"><label class="form-label">Observação</label><textarea class="form-control" id="pedido-obs" rows="2" placeholder="Detalhes do pedido..."></textarea></div>
-    <button class="btn-submit" onclick="salvarPedido()">💾 Salvar Pedido</button>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn-submit" onclick="salvarPedido()" style="flex:1;">💾 Salvar Pedido</button>
+      <button id="btn-excluir-pedido" style="display:none;flex:1;background:var(--danger-pale);color:var(--danger);border:1px solid rgba(220,38,38,0.2);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;padding:12px;" onclick="excluirPedidoEdit()">🗑️ Excluir</button>
+    </div>
   </div>
 </div>
-
 <!-- MODAL: CLIENTE -->
 <div class="modal-overlay" id="modal-cliente">
   <div class="modal-sheet">
@@ -2068,22 +2071,30 @@ body.dark .badge-futuro { color: #7ab4f5; }
       <div class="form-group"><label class="form-label">Desconto Global (%)</label><input type="number" class="form-control" id="orc-desconto" placeholder="0" step="0.1" min="0" max="100"></div>
     </div>
 
-    <div class="section-title" style="margin-top:4px;">Produtos do Orçamento</div>
-    <div class="search-bar" style="margin-bottom:8px;padding:9px 12px;">
-      <span>🔍</span>
-      <input type="text" class="search-input" id="orc-busca-prod" placeholder="Buscar produto para adicionar..." oninput="renderProdutosPickerOrc()">
+    <!-- PAINEL DE PRODUTOS -->
+    <div style="background:var(--bg2);border-radius:12px;padding:12px;border:1.5px solid var(--card-border);margin-top:8px;">
+      <div style="font-size:13px;font-weight:800;color:var(--primary);margin-bottom:8px;">📦 Adicionar Produtos</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <div class="search-bar" style="flex:1;margin:0;padding:9px 12px;">
+          <span>🔍</span>
+          <input type="text" class="search-input" id="orc-busca-prod" placeholder="Buscar por nome ou código..." oninput="renderProdutosPickerOrc()" onfocus="renderProdutosPickerOrc()">
+        </div>
+        <button onclick="renderProdutosPickerOrc()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🔍 Buscar</button>
+      </div>
+      <div id="produtos-picker-orc" style="max-height:200px;overflow-y:auto;border-radius:8px;background:var(--bg);border:1px solid var(--card-border);"></div>
     </div>
-    <div id="produtos-picker-orc" style="max-height:140px;overflow-y:auto;margin-bottom:10px;"></div>
-    <div id="itens-orc-lista"></div>
+    <!-- ITENS ADICIONADOS -->
+    <div id="itens-orc-lista" style="margin-top:8px;"></div>
     <div class="total-bar" id="total-orc-bar" style="display:none;">
       <span class="total-label">Total do Orçamento</span>
       <span class="total-valor" id="total-orc-valor">R$ 0,00</span>
     </div>
-
-    <div class="form-group" style="margin-top:12px;"><label class="form-label">Valor Manual (R$)</label><input type="number" class="form-control" id="orc-valor" placeholder="0,00" step="0.01" min="0"></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Valor Manual (R$) <span style="font-weight:400;font-size:10px;color:var(--text-muted);">— use se não adicionar produtos acima</span></label><input type="number" class="form-control" id="orc-valor" placeholder="0,00" step="0.01" min="0"></div>
     <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="orc-obs" rows="2" placeholder="Detalhes..."></textarea></div>
-    <button class="btn-submit" onclick="salvarOrcamento()">💾 Salvar Orçamento</button>
-    <button class="btn-danger" id="btn-excluir-orc" style="display:none;" onclick="excluirOrcamentoEdit()">🗑️ Excluir Orçamento</button>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn-submit" onclick="salvarOrcamento()" style="flex:1;">💾 Salvar Orçamento</button>
+      <button class="btn-danger" id="btn-excluir-orc" style="display:none;flex:1;" onclick="excluirOrcamentoEdit()">🗑️ Excluir</button>
+    </div>
   </div>
 </div>
 
@@ -2741,7 +2752,17 @@ function renderPedidos() {
     const c = STATE.clientes.find(x=>x.id===p.cliente_id);
     const ind = STATE.industrias.find(x=>x.id===p.industria_id);
     const statusLabel = {aberto:'EM ABERTO',andamento:'ANDAMENTO',atendido:'ATENDIDO',faturado:'FATURADO',enviado:'ENVIADO',aprovado:'APROVADO',recusado:'RECUSADO'}[p.status]||p.status.toUpperCase();
-    return '<div class="list-item" onclick="abrirStatusPedido(\''+p.id+'\')">'+'<div class="list-item-icon">'+(icones[p.status]||'📦')+'</div>'+'<div class="list-item-body"><div class="list-item-title">'+(c?c.nome:'–')+(p.numero?' · Nº '+p.numero:'')+'</div><div class="list-item-sub">'+formatarData(p.data)+(ind?' · '+ind.nome:p.fornecedor?' · '+p.fornecedor:'')+(p.frete?' · '+p.frete:'')+'</div></div>'+'<div class="list-item-right"><div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px;">'+moeda(p.valor)+'</div><span class="badge badge-'+(p.status||'aberto')+'">'+statusLabel+'</span></div></div>';
+    return '<div class="list-item" style="flex-wrap:wrap;gap:6px;">'+
+      '<div class="list-item-icon" onclick="abrirStatusPedido(\''+p.id+'\')">'+(icones[p.status]||'📦')+'</div>'+
+      '<div class="list-item-body" onclick="abrirStatusPedido(\''+p.id+'\')" style="cursor:pointer;"><div class="list-item-title">'+(c?c.nome:'–')+(p.numero?' · Nº '+p.numero:'')+'</div><div class="list-item-sub">'+formatarData(p.data)+(ind?' · '+ind.nome:p.fornecedor?' · '+p.fornecedor:'')+(p.frete?' · '+p.frete:'')+'</div></div>'+
+      '<div class="list-item-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--primary);">'+moeda(p.valor)+'</div>'+
+        '<span class="badge badge-'+(p.status||'aberto')+'">'+statusLabel+'</span>'+
+        '<div style="display:flex;gap:4px;margin-top:2px;">'+
+          '<button onclick="event.stopPropagation();editarPedido(\''+p.id+'\')" style="background:var(--primary-pale);color:var(--primary);border:1px solid rgba(29,78,216,0.2);border-radius:7px;font-size:11px;font-weight:700;padding:3px 8px;cursor:pointer;">✏️ Editar</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   }).join('');
 }
 
@@ -2793,8 +2814,55 @@ async function alterarStatusPedido(pid, novoStatus) {
   toast('✅ Status atualizado: '+novoStatus);
 }
 
-function abrirModalPedido() { popularSelectsClientes(); popularSelectIndustrias(); document.getElementById('pedido-data').value=hoje(); abrirModal('modal-pedido'); }
-function abrirModalPedidoComCliente(cid) { popularSelectsClientes(); popularSelectIndustrias(); document.getElementById('pedido-data').value=hoje(); abrirModal('modal-pedido'); setTimeout(()=>{ document.getElementById('pedido-cliente').value=cid; },80); }
+function abrirModalPedido(cid) {
+  popularSelectsClientes();
+  popularSelectIndustrias();
+  document.getElementById('pedido-edit-id').value = '';
+  document.getElementById('modal-pedido-title').textContent = '📦 Novo Pedido';
+  document.getElementById('pedido-data').value = hoje();
+  document.getElementById('btn-excluir-pedido').style.display = 'none';
+  ['pedido-numero','pedido-transportadora','pedido-valor','pedido-obs','pedido-busca-prod','pedido-previsao','pedido-dt-envio'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const frEl=document.getElementById('pedido-frete'); if(frEl) frEl.value='';
+  const indEl=document.getElementById('pedido-industria'); if(indEl) indEl.value='';
+  const comEl=document.getElementById('pedido-comissao'); if(comEl) comEl.value='';
+  itensPedidoAtual=[]; renderItensPedido();
+  abrirModal('modal-pedido');
+  if (cid) setTimeout(()=>{ document.getElementById('pedido-cliente').value=cid; },80);
+}
+function abrirModalPedidoComCliente(cid) { abrirModalPedido(cid); }
+
+function editarPedido(pid) {
+  const p = STATE.pedidos.find(x=>x.id===pid); if(!p) return;
+  popularSelectsClientes();
+  popularSelectIndustrias();
+  document.getElementById('pedido-edit-id').value = pid;
+  document.getElementById('modal-pedido-title').textContent = '✏️ Editar Pedido';
+  document.getElementById('btn-excluir-pedido').style.display = 'block';
+  setTimeout(()=>{
+    document.getElementById('pedido-cliente').value   = p.cliente_id||'';
+    document.getElementById('pedido-industria').value = p.industria_id||'';
+  },80);
+  document.getElementById('pedido-numero').value        = p.numero||'';
+  document.getElementById('pedido-data').value          = p.data||hoje();
+  document.getElementById('pedido-transportadora').value= p.transportadora||'';
+  document.getElementById('pedido-frete').value         = p.frete||'';
+  document.getElementById('pedido-comissao').value      = p.comissao||'';
+  document.getElementById('pedido-previsao').value      = p.previsao||'';
+  document.getElementById('pedido-dt-envio').value      = p.dt_envio||'';
+  document.getElementById('pedido-obs').value           = p.obs||'';
+  document.getElementById('pedido-valor').value         = (p.itens&&p.itens.length>0)?'':(p.valor||'');
+  itensPedidoAtual = (p.itens||[]).map(i=>({...i}));
+  renderItensPedido();
+  abrirModal('modal-pedido');
+}
+
+async function excluirPedidoEdit() {
+  const pid = document.getElementById('pedido-edit-id').value;
+  if (!pid || !confirm('Excluir este pedido permanentemente?')) return;
+  await deleteDoc_('pedidos', pid);
+  fecharModal('modal-pedido');
+  toast('🗑️ Pedido excluído');
+}
 
 function popularSelectIndustrias() {
   const opts = '<option value="">Selecionar...</option>' +
@@ -2813,19 +2881,22 @@ async function salvarPedido() {
   const previsao     = document.getElementById('pedido-previsao')?.value || '';
   const dtEnvio      = document.getElementById('pedido-dt-envio')?.value || '';
   const obs          = document.getElementById('pedido-obs').value.trim();
+  const editId       = document.getElementById('pedido-edit-id')?.value || '';
   if (!cid) { alert('Selecione um cliente!'); return; }
   const totalItens = itensPedidoAtual.reduce((s,i) => s+i.total, 0);
   const valorManual = parseFloat(document.getElementById('pedido-valor').value) || 0;
   const valor = totalItens > 0 ? totalItens : valorManual;
   const ind = STATE.industrias.find(x=>x.id===indId);
-  await addDoc_('pedidos', { cliente_id:cid, numero:num, industria_id:indId, fornecedor:ind?ind.nome:'', transportadora, frete, comissao, previsao, dt_envio:dtEnvio, valor, itens:[...itensPedidoAtual], status:'aberto', data:dataPed, obs });
+  const dataObj = { cliente_id:cid, numero:num, industria_id:indId, industria_nome:ind?ind.nome:'', fornecedor:ind?ind.nome:'', transportadora, frete, comissao, previsao, dt_envio:dtEnvio, valor, itens:[...itensPedidoAtual], data:dataPed, obs };
+  if (editId) {
+    await updateDoc_('pedidos', editId, dataObj);
+    toast('✅ Pedido atualizado!');
+  } else {
+    await addDoc_('pedidos', { ...dataObj, status:'aberto' });
+    toast('✅ Pedido criado!');
+  }
   itensPedidoAtual = []; renderItensPedido();
-  ['pedido-numero','pedido-transportadora','pedido-valor','pedido-obs','pedido-busca-prod','pedido-previsao','pedido-dt-envio'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  const frEl=document.getElementById('pedido-frete'); if(frEl) frEl.value='';
-  const indEl=document.getElementById('pedido-industria'); if(indEl) indEl.value='';
-  const comEl=document.getElementById('pedido-comissao'); if(comEl) comEl.value='';
   fecharModal('modal-pedido');
-  toast('✅ Pedido criado!');
 }
 
 // =====================================================
@@ -3120,10 +3191,38 @@ function renderOrcamentos() {
       '<div class="list-item-body"><div class="list-item-title">'+(c?c.nome:'–')+(o.numero?' · Nº '+o.numero:'')+'</div><div class="list-item-sub">'+formatarData(o.data)+(ind?' · '+ind.nome:'')+'</div></div>'+
       '<div class="list-item-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'+
         '<div style="font-size:13px;font-weight:700;color:var(--primary);">'+moeda(o.valor)+'</div>'+
-        '<button class="btn-converter" onclick="event.stopPropagation();converterOrcamentoPedido(\''+o.id+'\')">↪ Converter em Pedido</button>'+
+        '<span class="badge badge-'+(o.status||'aberto')+'">'+(o.status||'aberto').toUpperCase()+'</span>'+
+        '<div style="display:flex;gap:4px;margin-top:2px;">'+
+          '<button onclick="event.stopPropagation();editarOrcamento(\''+o.id+'\')" style="background:var(--primary-pale);color:var(--primary);border:1px solid rgba(29,78,216,0.2);border-radius:7px;font-size:11px;font-weight:700;padding:3px 8px;cursor:pointer;">✏️ Editar</button>'+
+          '<button onclick="event.stopPropagation();converterOrcamentoPedido(\''+o.id+'\')" style="background:var(--success-pale);color:var(--success);border:1px solid rgba(22,163,74,0.2);border-radius:7px;font-size:11px;font-weight:700;padding:3px 8px;cursor:pointer;">↪ Pedido</button>'+
+        '</div>'+
       '</div>'+
     '</div>';
   }).join('');
+}
+
+function editarOrcamento(oid) {
+  const o = STATE.orcamentos.find(x=>x.id===oid); if(!o) return;
+  popularSelectsClientes();
+  popularSelectIndustrias();
+  document.getElementById('orc-edit-id').value = oid;
+  document.getElementById('modal-orc-title').textContent = '✏️ Editar Orçamento';
+  document.getElementById('btn-excluir-orc').style.display = 'block';
+  setTimeout(()=>{
+    document.getElementById('orc-cliente').value   = o.cliente_id||'';
+    document.getElementById('orc-industria').value = o.industria_id||'';
+  },80);
+  document.getElementById('orc-numero').value        = o.numero||'';
+  document.getElementById('orc-data').value          = o.data||hoje();
+  document.getElementById('orc-transportadora').value= o.transportadora||'';
+  document.getElementById('orc-frete').value         = o.frete||'';
+  document.getElementById('orc-desconto').value      = o.desconto||'';
+  document.getElementById('orc-previsao').value      = o.previsao||'';
+  document.getElementById('orc-obs').value           = o.obs||'';
+  document.getElementById('orc-valor').value         = (o.itens&&o.itens.length>0)?'':(o.valor||'');
+  itensOrcAtual = (o.itens||[]).map(i=>({...i}));
+  renderItensOrc();
+  abrirModal('modal-orcamento');
 }
 
 function abrirModalOrcamento() {
@@ -3189,19 +3288,29 @@ function renderProdutosPickerOrc() {
   const busca = (document.getElementById('orc-busca-prod')?.value||'').toLowerCase();
   const picker = document.getElementById('produtos-picker-orc');
   if (!picker) return;
-  const filtrados = STATE.produtos.filter(p=>p.nome.toLowerCase().includes(busca)||(p.sku||'').toLowerCase().includes(busca)).slice(0,20);
-  if (filtrados.length===0) { picker.innerHTML='<div style="text-align:center;padding:10px;font-size:13px;color:var(--text-muted);">'+(STATE.produtos.length===0?'Nenhum produto':'Nenhum resultado')+'</div>'; return; }
-  picker.innerHTML = filtrados.map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="adicionarItemOrc('${p.id}')"><div style="flex:1;font-size:13px;font-weight:600;color:var(--text);">${p.nome}</div><div style="font-size:13px;font-weight:700;color:var(--primary);">${moeda(p.preco)}</div><button class="btn-add-prod" onclick="event.stopPropagation();adicionarItemOrc('${p.id}')">+</button></div>`).join('');
+  const filtrados = STATE.produtos.filter(p=>
+    p.nome.toLowerCase().includes(busca)||(p.sku||'').toLowerCase().includes(busca)||(p.descricao||'').toLowerCase().includes(busca)
+  ).slice(0,30);
+  if (STATE.produtos.length===0) { picker.innerHTML='<div style="text-align:center;padding:16px;font-size:13px;color:var(--text-muted);">Nenhum produto cadastrado</div>'; return; }
+  if (filtrados.length===0) { picker.innerHTML='<div style="text-align:center;padding:16px;font-size:13px;color:var(--text-muted);">Nenhum resultado para "'+busca+'"</div>'; return; }
+  picker.innerHTML = filtrados.map(p=>{
+    const jaAdicionado = itensOrcAtual.some(i=>i.produto_id===p.id);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--card-border);cursor:pointer;background:${jaAdicionado?'var(--success-pale)':'transparent'};" onclick="adicionarItemOrc('${p.id}')">`+
+      `<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nome}</div>`+
+      `${p.sku?'<div style="font-size:11px;color:var(--text-muted);">SKU: '+p.sku+'</div>':''}</div>`+
+      `<div style="font-size:13px;font-weight:800;color:var(--primary);white-space:nowrap;">${moeda(p.preco)}</div>`+
+      `<button style="background:${jaAdicionado?'var(--success)':'var(--primary)'};color:#fff;border:none;border-radius:8px;width:30px;height:30px;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" onclick="event.stopPropagation();adicionarItemOrc('${p.id}')">${jaAdicionado?'✓':'+'}</button>`+
+      `</div>`;
+  }).join('');
 }
 
 function adicionarItemOrc(pid) {
   const p = STATE.produtos.find(x=>x.id===pid); if(!p) return;
   const ex = itensOrcAtual.find(i=>i.produto_id===pid);
   if (ex) { ex.quantidade++; ex.total=ex.quantidade*ex.preco_unit; }
-  else itensOrcAtual.push({ produto_id:pid, nome:p.nome, quantidade:1, preco_unit:p.preco, unidade:p.unidade||'UN', total:p.preco });
+  else itensOrcAtual.push({ produto_id:pid, nome:p.nome, sku:p.sku||'', quantidade:1, preco_unit:p.preco, unidade:p.unidade||'UN', total:p.preco });
   renderItensOrc();
-  const buscaEl=document.getElementById('orc-busca-prod'); if(buscaEl) buscaEl.value='';
-  renderProdutosPickerOrc();
+  renderProdutosPickerOrc(); // atualiza o check verde sem limpar a busca
 }
 
 function renderItensOrc() {
@@ -3211,7 +3320,14 @@ function renderItensOrc() {
   if (!lista) return;
   if (itensOrcAtual.length===0) { lista.innerHTML=''; if(totalBar) totalBar.style.display='none'; return; }
   const total = itensOrcAtual.reduce((s,i)=>s+i.total,0);
-  lista.innerHTML = itensOrcAtual.map((item,idx)=>`<div class="item-pedido"><div class="item-nome">${item.nome}</div><div class="item-qty-ctrl"><button class="qty-btn" onclick="alterarQtdOrc(${idx},-1)">−</button><span class="qty-num">${item.quantidade}</span><button class="qty-btn" onclick="alterarQtdOrc(${idx},1)">+</button></div><div class="item-total">${moeda(item.total)}</div><button class="item-del" onclick="removerItemOrc(${idx})">✕</button></div>`).join('');
+  lista.innerHTML = itensOrcAtual.map((item,idx)=>
+    `<div class="item-pedido">`+
+    `<div class="item-nome"><div style="font-weight:700;">${item.nome}</div>${item.sku?'<div style="font-size:11px;color:var(--text-muted);">SKU: '+item.sku+' · '+moeda(item.preco_unit)+'/un</div>':''}</div>`+
+    `<div class="item-qty-ctrl"><button class="qty-btn" onclick="alterarQtdOrc(${idx},-1)">−</button><span class="qty-num">${item.quantidade}</span><button class="qty-btn" onclick="alterarQtdOrc(${idx},1)">+</button></div>`+
+    `<div class="item-total">${moeda(item.total)}</div>`+
+    `<button class="item-del" onclick="removerItemOrc(${idx})">✕</button>`+
+    `</div>`
+  ).join('');
   if(totalBar) totalBar.style.display='flex';
   if(totalValor) totalValor.textContent=moeda(total);
   const valorEl=document.getElementById('orc-valor'); if(valorEl&&total>0) valorEl.value=total.toFixed(2);
@@ -3889,19 +4005,19 @@ function renderProdutosPicker() {
   const picker = document.getElementById('produtos-picker');
   if (!picker) return;
   const filtrados = STATE.produtos.filter(p =>
-    p.nome.toLowerCase().includes(busca) || (p.sku||'').toLowerCase().includes(busca)
-  ).slice(0, 20);
-  if (filtrados.length === 0) {
-    picker.innerHTML = '<div style="text-align:center;padding:12px;font-size:13px;color:var(--text-muted);">'+(STATE.produtos.length===0?'Nenhum produto cadastrado':'Nenhum resultado')+'</div>';
-    return;
-  }
-  picker.innerHTML = filtrados.map(p => `
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="adicionarItemPedido('${p.id}')">
-      <div style="flex:1;font-size:13px;font-weight:600;color:var(--text);">${p.nome} <span style="color:var(--text-muted);font-weight:400;">${p.sku?'· '+p.sku:''}</span></div>
-      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-right:4px;">${moeda(p.preco)}</div>
-      <button class="btn-add-prod" onclick="event.stopPropagation();adicionarItemPedido('${p.id}')">+</button>
-    </div>
-  `).join('');
+    p.nome.toLowerCase().includes(busca)||(p.sku||'').toLowerCase().includes(busca)||(p.descricao||'').toLowerCase().includes(busca)
+  ).slice(0, 30);
+  if (STATE.produtos.length===0) { picker.innerHTML='<div style="text-align:center;padding:16px;font-size:13px;color:var(--text-muted);">Nenhum produto cadastrado</div>'; return; }
+  if (filtrados.length===0) { picker.innerHTML='<div style="text-align:center;padding:16px;font-size:13px;color:var(--text-muted);">Nenhum resultado para "'+busca+'"</div>'; return; }
+  picker.innerHTML = filtrados.map(p=>{
+    const jaAdicionado = itensPedidoAtual.some(i=>i.produto_id===p.id);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--card-border);cursor:pointer;background:${jaAdicionado?'var(--success-pale)':'transparent'};" onclick="adicionarItemPedido('${p.id}')">`+
+      `<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nome}</div>`+
+      `${p.sku?'<div style="font-size:11px;color:var(--text-muted);">SKU: '+p.sku+'</div>':''}</div>`+
+      `<div style="font-size:13px;font-weight:800;color:var(--primary);white-space:nowrap;">${moeda(p.preco)}</div>`+
+      `<button style="background:${jaAdicionado?'var(--success)':'var(--primary)'};color:#fff;border:none;border-radius:8px;width:30px;height:30px;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" onclick="event.stopPropagation();adicionarItemPedido('${p.id}')">${jaAdicionado?'✓':'+'}</button>`+
+      `</div>`;
+  }).join('');
 }
 
 function adicionarItemPedido(pid) {
@@ -3911,12 +4027,10 @@ function adicionarItemPedido(pid) {
     existente.quantidade++;
     existente.total = existente.quantidade * existente.preco_unit;
   } else {
-    itensPedidoAtual.push({ produto_id: pid, nome: p.nome, quantidade: 1, preco_unit: p.preco, unidade
-: p.unidade||'UN', total: p.preco });
+    itensPedidoAtual.push({ produto_id: pid, nome: p.nome, sku: p.sku||'', quantidade: 1, preco_unit: p.preco, unidade: p.unidade||'UN', total: p.preco });
   }
   renderItensPedido();
-  document.getElementById('pedido-busca-prod').value = '';
-  renderProdutosPicker();
+  renderProdutosPicker(); // atualiza check verde sem limpar a busca
 }
 
 function alterarQtdItem(idx, delta) {
