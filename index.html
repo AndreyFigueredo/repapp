@@ -1067,6 +1067,108 @@ body.dark .badge-futuro { color: #7ab4f5; }
 .intel-add-alias {
   display: flex; gap: 6px; margin-top: 8px;
 }
+
+/* =====================================================
+   FASE 5: ERP INTELIGENTE
+   ===================================================== */
+.dash5-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px;
+}
+@media (min-width: 600px) { .dash5-grid { grid-template-columns: repeat(4, 1fr); } }
+.dash5-kpi {
+  background: var(--bg2); border-radius: 12px; padding: 14px 10px;
+  text-align: center; border: 1.5px solid var(--card-border);
+  position: relative; overflow: hidden;
+}
+.dash5-kpi-value {
+  font-size: 22px; font-weight: 900; color: var(--primary); line-height: 1;
+}
+.dash5-kpi-label {
+  font-size: 11px; color: var(--text-muted); margin-top: 4px;
+}
+.dash5-kpi-delta {
+  font-size: 11px; font-weight: 700; margin-top: 3px;
+}
+.dash5-kpi-delta.up   { color: var(--success); }
+.dash5-kpi-delta.down { color: var(--danger); }
+.dash5-section { font-size: 14px; font-weight: 800; color: var(--primary); margin: 14px 0 8px; }
+.dash5-bar-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.dash5-bar-label { font-size: 12px; font-weight: 600; min-width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash5-bar-track { flex: 1; height: 8px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
+.dash5-bar-fill  { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.dash5-bar-val   { font-size: 12px; font-weight: 700; color: var(--primary); min-width: 70px; text-align: right; }
+.abc-chip {
+  display: inline-block; border-radius: 6px; padding: 2px 8px;
+  font-size: 11px; font-weight: 800; margin-right: 4px;
+}
+.abc-a { background: #dcfce7; color: #166534; }
+.abc-b { background: #fef9c3; color: #854d0e; }
+.abc-c { background: #fee2e2; color: #991b1b; }
+.alert-card {
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  border-left: 4px solid var(--danger);
+  background: var(--danger-pale);
+}
+.alert-card.warn { border-left-color: var(--warning); background: rgba(217,119,6,0.08); }
+.alert-card.info { border-left-color: var(--primary); background: var(--primary-pale); }
+.alert-card.ok   { border-left-color: var(--success); background: rgba(22,163,74,0.08); }
+.alert-title { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
+.alert-body  { font-size: 12px; color: var(--text-muted); }
+.alert-action { font-size: 12px; font-weight: 700; color: var(--primary); margin-top: 6px; cursor: pointer; text-decoration: underline; }
+.opp-card {
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  background: var(--bg2); border: 1.5px solid var(--card-border);
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.opp-icon { font-size: 22px; line-height: 1; }
+.opp-body { flex: 1; }
+.opp-title { font-size: 13px; font-weight: 800; }
+.opp-desc  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.opp-value { font-size: 13px; font-weight: 700; color: var(--success); margin-top: 4px; }
+.meta-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.meta-info { flex: 1; }
+.meta-nome { font-size: 13px; font-weight: 700; }
+.meta-pct  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.meta-track { flex: 2; height: 10px; background: var(--bg2); border-radius: 5px; overflow: hidden; }
+.meta-fill  { height: 100%; border-radius: 5px; background: var(--primary); transition: width 0.5s; }
+.meta-fill.done { background: var(--success); }
+.meta-val  { font-size: 13px; font-weight: 800; color: var(--primary); min-width: 70px; text-align: right; }
+.sugestao-card {
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  background: var(--bg2); border: 1.5px solid var(--card-border);
+}
+.sugestao-cliente { font-size: 13px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+.sugestao-item { font-size: 12px; color: var(--text); padding: 3px 0; border-bottom: 1px solid var(--card-border); }
+.sugestao-item:last-child { border-bottom: none; }
+.tab-bar5 {
+  display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px;
+}
+.tab-btn5 {
+  flex-shrink: 0; padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  border: 1.5px solid var(--card-border); background: var(--bg2); color: var(--text-muted);
+  cursor: pointer; white-space: nowrap;
+}
+.tab-btn5.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.periodo-sel {
+  display: flex; gap: 6px; margin-bottom: 12px;
+}
+.periodo-btn {
+  padding: 5px 12px; border-radius: 16px; font-size: 11px; font-weight: 700;
+  border: 1.5px solid var(--card-border); background: var(--bg2); color: var(--text-muted); cursor: pointer;
+}
+.periodo-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.sparkline-row {
+  display: flex; align-items: flex-end; gap: 3px; height: 40px; margin: 8px 0;
+}
+.sparkline-bar {
+  flex: 1; background: var(--primary); border-radius: 3px 3px 0 0; min-height: 3px;
+  opacity: 0.7; transition: height 0.3s;
+}
+.sparkline-bar:hover { opacity: 1; }
 </style>
 </head>
 <body>
@@ -1142,7 +1244,8 @@ body.dark .badge-futuro { color: #7ab4f5; }
   <button class="nav-item" data-screen="produtos"   onclick="showScreen('produtos')">  <span class="nav-icon">🏷️</span><span>Produtos</span></button>
   <button class="nav-item" data-screen="controle"   onclick="showScreen('controle')"> <span class="nav-icon">📊</span><span>Controle</span></button>
   <button class="nav-item" data-screen="importador"   onclick="showScreen('importador')">  <span class="nav-icon">📥</span><span>Importar</span></button>
-  <button class="nav-item" data-screen="inteligencia" onclick="showScreen('inteligencia')"><span class="nav-icon">🧠</span><span>Inteligência</span></button>
+  <button class="nav-item" data-screen="inteligencia"  onclick="showScreen('inteligencia')"> <span class="nav-icon">🧠</span><span>Inteligência</span></button>
+  <button class="nav-item" data-screen="comercial"    onclick="showScreen('comercial')">    <span class="nav-icon">📈</span><span>Comercial</span><span class="nav-badge" id="nav-badge-comercial" style="display:none;">0</span></button>
   <button class="nav-item" data-screen="config"       onclick="showScreen('config')">      <span class="nav-icon">⚙️</span><span>Config</span></button>
 
   <!-- Usuário (desktop) -->
@@ -1403,6 +1506,156 @@ body.dark .badge-futuro { color: #7ab4f5; }
 
       </div>
     </div>
+
+    <!-- INTELIGÊNCIA COMERCIAL — FASE 5 -->
+    <div class="screen" id="screen-comercial">
+
+      <!-- Abas principais -->
+      <div class="tab-bar5" id="com-tabs">
+        <button class="tab-btn5 active" onclick="comSetTab('dashboard')">📊 Dashboard</button>
+        <button class="tab-btn5" onclick="comSetTab('alertas')">🚨 Alertas</button>
+        <button class="tab-btn5" onclick="comSetTab('oportunidades')">🎯 Oportunidades</button>
+        <button class="tab-btn5" onclick="comSetTab('sugestoes')">💡 Sugestões</button>
+        <button class="tab-btn5" onclick="comSetTab('abc')">📉 Curva ABC</button>
+        <button class="tab-btn5" onclick="comSetTab('metas')">🏆 Metas</button>
+        <button class="tab-btn5" onclick="comSetTab('comissao')">💰 Comissão</button>
+      </div>
+
+      <!-- Filtro de período -->
+      <div class="periodo-sel" id="com-periodo">
+        <button class="periodo-btn active" onclick="comSetPeriodo(30)" data-dias="30">30 dias</button>
+        <button class="periodo-btn" onclick="comSetPeriodo(60)" data-dias="60">60 dias</button>
+        <button class="periodo-btn" onclick="comSetPeriodo(90)" data-dias="90">90 dias</button>
+        <button class="periodo-btn" onclick="comSetPeriodo(365)" data-dias="365">1 ano</button>
+      </div>
+
+      <!-- PAINEL DASHBOARD -->
+      <div id="com-panel-dashboard">
+        <div class="dash5-grid" id="com-kpis"></div>
+        <div class="card" style="margin-bottom:10px;">
+          <div class="dash5-section">📈 Faturamento (Sparkline)</div>
+          <div class="sparkline-row" id="com-sparkline"></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);" id="com-spark-labels"></div>
+        </div>
+        <div class="card" style="margin-bottom:10px;">
+          <div class="dash5-section">👤 Top Clientes</div>
+          <div id="com-top-clientes"></div>
+        </div>
+        <div class="card" style="margin-bottom:10px;">
+          <div class="dash5-section">🏭 Top Marcas</div>
+          <div id="com-top-marcas"></div>
+        </div>
+        <div class="card">
+          <div class="dash5-section">🏷️ Top Produtos</div>
+          <div id="com-top-produtos"></div>
+        </div>
+      </div>
+
+      <!-- PAINEL ALERTAS -->
+      <div id="com-panel-alertas" style="display:none;">
+        <div class="card" style="margin-bottom:10px;">
+          <div class="dash5-section">🚨 Alertas Ativos</div>
+          <div id="com-alertas-list"><div style="color:var(--text-muted);font-size:13px;">Calculando alertas...</div></div>
+        </div>
+      </div>
+
+      <!-- PAINEL OPORTUNIDADES -->
+      <div id="com-panel-oportunidades" style="display:none;">
+        <div class="card" style="margin-bottom:10px;">
+          <div class="dash5-section">🎯 Oportunidades Detectadas</div>
+          <div id="com-opp-list"><div style="color:var(--text-muted);font-size:13px;">Analisando oportunidades...</div></div>
+        </div>
+      </div>
+
+      <!-- PAINEL SUGESTÕES -->
+      <div id="com-panel-sugestoes" style="display:none;">
+        <div class="card" style="margin-bottom:10px;">
+          <div class="dash5-section">💡 Sugestões de Reposição</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Baseado no histórico de compras e intervalo médio de cada cliente.</div>
+          <div id="com-sugestoes-list"><div style="color:var(--text-muted);font-size:13px;">Calculando sugestões...</div></div>
+        </div>
+      </div>
+
+      <!-- PAINEL CURVA ABC -->
+      <div id="com-panel-abc" style="display:none;">
+        <div class="card" style="margin-bottom:10px;">
+          <div class="dash5-section">📉 Curva ABC de Produtos</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+            <span class="abc-chip abc-a">A</span> Top 20% do faturamento &nbsp;
+            <span class="abc-chip abc-b">B</span> 30% seguintes &nbsp;
+            <span class="abc-chip abc-c">C</span> 50% restantes
+          </div>
+          <div id="com-abc-list"></div>
+        </div>
+        <div class="card">
+          <div class="dash5-section">📉 Curva ABC de Clientes</div>
+          <div id="com-abc-clientes"></div>
+        </div>
+      </div>
+
+      <!-- PAINEL METAS -->
+      <div id="com-panel-metas" style="display:none;">
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="dash5-section" style="margin:0;">🏆 Metas do Mês</div>
+            <button onclick="comAbrirMeta()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Meta</button>
+          </div>
+          <div id="com-metas-list" style="margin-top:12px;"><div style="color:var(--text-muted);font-size:13px;">Nenhuma meta definida ainda.</div></div>
+        </div>
+        <!-- Form nova meta -->
+        <div class="card" id="com-meta-form" style="display:none;">
+          <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:10px;">Nova Meta</div>
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <select class="form-control" id="com-meta-tipo">
+              <option value="faturamento">Faturamento Total</option>
+              <option value="marca">Por Marca</option>
+              <option value="cliente">Por Cliente</option>
+              <option value="pedidos">Número de Pedidos</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nome / Descrição</label>
+            <input class="form-control" id="com-meta-nome" placeholder="Ex: Meta Tramontina Junho">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor Alvo (R$)</label>
+            <input class="form-control" type="number" id="com-meta-valor" placeholder="10000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mês de Referência</label>
+            <input class="form-control" type="month" id="com-meta-mes">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button onclick="comSalvarMeta()" class="btn-submit" style="flex:1;">Salvar Meta</button>
+            <button onclick="document.getElementById('com-meta-form').style.display='none'" style="flex:1;background:var(--bg2);color:var(--text);border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL COMISSÃO -->
+      <div id="com-panel-comissao" style="display:none;">
+        <div class="dash5-grid" id="com-com-kpis"></div>
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="dash5-section" style="margin:0;">💰 Comissão por Marca</div>
+            <button onclick="comAbrirComissao()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">Configurar %</button>
+          </div>
+          <div id="com-comissao-marcas" style="margin-top:12px;"></div>
+        </div>
+        <!-- Form comissão -->
+        <div class="card" id="com-comissao-form" style="display:none;">
+          <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:10px;">💰 Configurar Comissões</div>
+          <div id="com-comissao-inputs"></div>
+          <button onclick="comSalvarComissoes()" class="btn-submit" style="width:100%;margin-top:8px;">Salvar Comissões</button>
+        </div>
+        <div class="card">
+          <div class="dash5-section">📊 Histórico de Comissão</div>
+          <div id="com-comissao-historico"></div>
+        </div>
+      </div>
+
+    </div><!-- /screen-comercial -->
 
     <!-- INTELIGÊNCIA DO SISTEMA — FASE 4 -->
     <div class="screen" id="screen-inteligencia">
@@ -2243,7 +2496,7 @@ async function deleteDoc_(col, id) {
 // =====================================================
 // NAVEGAÇÃO
 // =====================================================
-const TITULOS = { home:'🏠 Início', clientes:'👤 Clientes', visitas:'📍 Visitas', pedidos:'📦 Pedidos', industrias:'🏭 Indústrias', orcamentos:'📋 Orçamentos', agenda:'📅 Agenda', produtos:'🏷️ Produtos', controle:'📊 Controle', importador:'📥 Importar Pedido', inteligencia:'🧠 Inteligência', config:'⚙️ Configurar' };
+const TITULOS = { home:'🏠 Início', clientes:'👤 Clientes', visitas:'📍 Visitas', pedidos:'📦 Pedidos', industrias:'🏭 Indústrias', orcamentos:'📋 Orçamentos', agenda:'📅 Agenda', produtos:'🏷️ Produtos', controle:'📊 Controle', importador:'📥 Importar Pedido', inteligencia:'🧠 Inteligência', comercial:'📈 Inteligência Comercial', config:'⚙️ Configurar' };
 
 function showScreen(tela) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -2267,6 +2520,7 @@ function showScreen(tela) {
   if (tela==='config')     renderConfigScreen();
   if (tela==='importador')    impIniciar();
   if (tela==='inteligencia')  intelRender();
+  if (tela==='comercial')     comercialRender();
 }
 
 function fabAction() {
@@ -3805,6 +4059,633 @@ function compartilharWhatsApp(pid) {
     toast('❌ Erro Firebase: '+e.message);
   }
 })();
+
+// =====================================================
+// INTELIGÊNCIA COMERCIAL — FASE 5
+// =====================================================
+
+let COM_PERIODO_DIAS = 30;
+let COM_TAB_ATUAL    = 'dashboard';
+const COM_METAS_KEY  = 'repapp_metas_v1';
+const COM_COM_KEY    = 'repapp_comissoes_v1';
+
+// ---- Utilitários de data ----
+function diasAtras(n) {
+  const d = new Date(); d.setDate(d.getDate() - n); return d;
+}
+function diffDias(d1, d2) {
+  return Math.round(Math.abs(new Date(d1) - new Date(d2)) / 86400000);
+}
+function mesAno(isoDate) {
+  if (!isoDate) return '';
+  return isoDate.substring(0, 7);
+}
+
+// ---- Filtra pedidos pelo período selecionado ----
+function comPedidosPeriodo(dias) {
+  const corte = diasAtras(dias);
+  return (STATE.pedidos || []).filter(p => {
+    const d = new Date(p.data || p.createdAt || 0);
+    return d >= corte && p.status !== 'recusado';
+  });
+}
+
+// ---- Calcula valor de um pedido (usa valor ou soma itens) ----
+function comValorPedido(p) {
+  if (p.valor && Number(p.valor) > 0) return Number(p.valor);
+  if (p.total && Number(p.total) > 0) return Number(p.total);
+  return (p.itens || p.items || []).reduce((s, i) => s + (Number(i.preco || i.price || 0) * Number(i.quantidade || i.qtd || 1)), 0);
+}
+
+// ---- Navegação de abas ----
+function comSetTab(tab) {
+  COM_TAB_ATUAL = tab;
+  document.querySelectorAll('#com-tabs .tab-btn5').forEach(b => b.classList.remove('active'));
+  const idx = ['dashboard','alertas','oportunidades','sugestoes','abc','metas','comissao'].indexOf(tab);
+  const btns = document.querySelectorAll('#com-tabs .tab-btn5');
+  if (btns[idx]) btns[idx].classList.add('active');
+  ['dashboard','alertas','oportunidades','sugestoes','abc','metas','comissao'].forEach(t => {
+    const el = document.getElementById('com-panel-' + t);
+    if (el) el.style.display = t === tab ? '' : 'none';
+  });
+  // Mostra/esconde filtro de período (não faz sentido em metas/comissão)
+  const periodoEl = document.getElementById('com-periodo');
+  if (periodoEl) periodoEl.style.display = ['metas','comissao'].includes(tab) ? 'none' : '';
+  comRenderTab(tab);
+}
+
+// ---- Muda período ----
+function comSetPeriodo(dias) {
+  COM_PERIODO_DIAS = dias;
+  document.querySelectorAll('.periodo-btn').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.dias) === dias);
+  });
+  comRenderTab(COM_TAB_ATUAL);
+}
+
+// ---- Render principal ----
+function comercialRender() {
+  comSetTab(COM_TAB_ATUAL);
+}
+
+function comRenderTab(tab) {
+  if (tab === 'dashboard')     comRenderDashboard();
+  if (tab === 'alertas')       comRenderAlertas();
+  if (tab === 'oportunidades') comRenderOportunidades();
+  if (tab === 'sugestoes')     comRenderSugestoes();
+  if (tab === 'abc')           comRenderABC();
+  if (tab === 'metas')         comRenderMetas();
+  if (tab === 'comissao')      comRenderComissao();
+}
+
+// =====================================================
+// DASHBOARD
+// =====================================================
+function comRenderDashboard() {
+  const pedidos = comPedidosPeriodo(COM_PERIODO_DIAS);
+  const pedAnt  = comPedidosPeriodo(COM_PERIODO_DIAS * 2).filter(p => {
+    const d = new Date(p.data || p.createdAt || 0);
+    return d < diasAtras(COM_PERIODO_DIAS);
+  });
+
+  const fat     = pedidos.reduce((s, p) => s + comValorPedido(p), 0);
+  const fatAnt  = pedAnt.reduce((s, p) => s + comValorPedido(p), 0);
+  const delta   = fatAnt > 0 ? Math.round(((fat - fatAnt) / fatAnt) * 100) : 0;
+
+  const cliSet  = new Set(pedidos.map(p => p.cliente_id).filter(Boolean));
+  const ticket  = pedidos.length > 0 ? fat / pedidos.length : 0;
+
+  // KPIs
+  const kpis = [
+    { v: moeda(fat),         l: 'Faturamento',      d: delta, icon: '💰' },
+    { v: pedidos.length,     l: 'Pedidos',           d: null,  icon: '📦' },
+    { v: cliSet.size,        l: 'Clientes Ativos',   d: null,  icon: '👤' },
+    { v: moeda(ticket),      l: 'Ticket Médio',       d: null,  icon: '🎯' }
+  ];
+  document.getElementById('com-kpis').innerHTML = kpis.map(k => `
+    <div class="dash5-kpi">
+      <div style="font-size:20px;margin-bottom:4px;">${k.icon}</div>
+      <div class="dash5-kpi-value">${k.v}</div>
+      <div class="dash5-kpi-label">${k.l}</div>
+      ${k.d !== null ? '<div class="dash5-kpi-delta ' + (k.d >= 0 ? 'up' : 'down') + '">' + (k.d >= 0 ? '↑' : '↓') + ' ' + Math.abs(k.d) + '% vs anterior</div>' : ''}
+    </div>`).join('');
+
+  // Sparkline por semana
+  const semanas = 8;
+  const dadosSem = [];
+  for (let i = semanas - 1; i >= 0; i--) {
+    const ini = diasAtras((i + 1) * 7);
+    const fim = diasAtras(i * 7);
+    const v = (STATE.pedidos || []).filter(p => {
+      const d = new Date(p.data || p.createdAt || 0);
+      return d >= ini && d < fim && p.status !== 'recusado';
+    }).reduce((s, p) => s + comValorPedido(p), 0);
+    dadosSem.push(v);
+  }
+  const maxSem = Math.max(...dadosSem, 1);
+  document.getElementById('com-sparkline').innerHTML = dadosSem.map(v =>
+    `<div class="sparkline-bar" style="height:${Math.round((v / maxSem) * 100)}%;" title="${moeda(v)}"></div>`
+  ).join('');
+  document.getElementById('com-spark-labels').innerHTML = dadosSem.map((_, i) => {
+    const d = diasAtras((semanas - 1 - i) * 7);
+    return `<span>${d.getDate()}/${d.getMonth() + 1}</span>`;
+  }).join('');
+
+  // Top Clientes
+  const valCli = {};
+  pedidos.forEach(p => { valCli[p.cliente_id] = (valCli[p.cliente_id] || 0) + comValorPedido(p); });
+  const topCli = Object.entries(valCli).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxCli = topCli[0]?.[1] || 1;
+  document.getElementById('com-top-clientes').innerHTML = topCli.length === 0
+    ? '<p style="color:var(--text-muted);font-size:13px;">Sem dados no período</p>'
+    : topCli.map(([cid, val]) => {
+        const c = (STATE.clientes || []).find(x => x.id === cid);
+        const pct = Math.round((val / maxCli) * 100);
+        return `<div class="dash5-bar-row">
+          <div class="dash5-bar-label">${c ? c.nome : '?'}</div>
+          <div class="dash5-bar-track"><div class="dash5-bar-fill" style="width:${pct}%;background:var(--primary);"></div></div>
+          <div class="dash5-bar-val">${moeda(val)}</div>
+        </div>`;
+      }).join('');
+
+  // Top Marcas (por industria_id)
+  const valMarca = {};
+  pedidos.forEach(p => {
+    const key = p.industria_nome || p.industria_id || 'Sem marca';
+    valMarca[key] = (valMarca[key] || 0) + comValorPedido(p);
+  });
+  const topMarca = Object.entries(valMarca).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxMarca = topMarca[0]?.[1] || 1;
+  document.getElementById('com-top-marcas').innerHTML = topMarca.length === 0
+    ? '<p style="color:var(--text-muted);font-size:13px;">Sem dados no período</p>'
+    : topMarca.map(([nome, val]) => {
+        const pct = Math.round((val / maxMarca) * 100);
+        return `<div class="dash5-bar-row">
+          <div class="dash5-bar-label">${nome}</div>
+          <div class="dash5-bar-track"><div class="dash5-bar-fill" style="width:${pct}%;background:var(--success);"></div></div>
+          <div class="dash5-bar-val">${moeda(val)}</div>
+        </div>`;
+      }).join('');
+
+  // Top Produtos
+  const qtdProd = {};
+  pedidos.forEach(p => {
+    (p.itens || p.items || []).forEach(i => {
+      const nome = i.produto_nome || i.nome || i.name || '?';
+      qtdProd[nome] = (qtdProd[nome] || 0) + Number(i.quantidade || i.qtd || 1);
+    });
+  });
+  const topProd = Object.entries(qtdProd).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxProd = topProd[0]?.[1] || 1;
+  document.getElementById('com-top-produtos').innerHTML = topProd.length === 0
+    ? '<p style="color:var(--text-muted);font-size:13px;">Sem dados no período</p>'
+    : topProd.map(([nome, qty]) => {
+        const pct = Math.round((qty / maxProd) * 100);
+        return `<div class="dash5-bar-row">
+          <div class="dash5-bar-label">${nome}</div>
+          <div class="dash5-bar-track"><div class="dash5-bar-fill" style="width:${pct}%;background:var(--accent);"></div></div>
+          <div class="dash5-bar-val">${qty} un.</div>
+        </div>`;
+      }).join('');
+}
+
+// =====================================================
+// ALERTAS
+// =====================================================
+function comRenderAlertas() {
+  const alertas = [];
+  const hoje5 = new Date();
+
+  (STATE.clientes || []).forEach(c => {
+    const pedsCli = (STATE.pedidos || []).filter(p => p.cliente_id === c.id && p.status !== 'recusado');
+    if (pedsCli.length === 0) return;
+
+    // Ordena por data
+    pedsCli.sort((a, b) => new Date(b.data || b.createdAt || 0) - new Date(a.data || a.createdAt || 0));
+    const ultimoPed = pedsCli[0];
+    const diasSemComprar = diffDias(hoje5, new Date(ultimoPed.data || ultimoPed.createdAt || 0));
+
+    // Intervalo médio entre pedidos
+    let intervaloMedio = 30;
+    if (pedsCli.length >= 2) {
+      const datas = pedsCli.map(p => new Date(p.data || p.createdAt || 0)).sort((a, b) => a - b);
+      const diffs = [];
+      for (let i = 1; i < datas.length; i++) diffs.push(diffDias(datas[i], datas[i-1]));
+      intervaloMedio = Math.round(diffs.reduce((s, d) => s + d, 0) / diffs.length);
+    }
+
+    const atraso = diasSemComprar - intervaloMedio;
+    if (atraso > 15) {
+      alertas.push({
+        tipo: atraso > 30 ? 'danger' : 'warn',
+        titulo: c.nome + ' está parado',
+        corpo: `Há ${diasSemComprar} dias sem comprar. Média era ${intervaloMedio} dias. Atraso: ${atraso} dias.`,
+        acao: `Ver cliente`,
+        clienteId: c.id,
+        prioridade: atraso
+      });
+    }
+
+    // Queda de compra (valor do último pedido vs média)
+    const valMedio = pedsCli.reduce((s, p) => s + comValorPedido(p), 0) / pedsCli.length;
+    const valUltimo = comValorPedido(ultimoPed);
+    if (valUltimo < valMedio * 0.5 && valMedio > 100) {
+      alertas.push({
+        tipo: 'warn',
+        titulo: c.nome + ' — queda de compra',
+        corpo: `Último pedido: ${moeda(valUltimo)}. Média histórica: ${moeda(valMedio)}. Queda de ${Math.round((1 - valUltimo / valMedio) * 100)}%.`,
+        acao: 'Ver histórico',
+        clienteId: c.id,
+        prioridade: 10
+      });
+    }
+  });
+
+  alertas.sort((a, b) => b.prioridade - a.prioridade);
+
+  const el = document.getElementById('com-alertas-list');
+  if (alertas.length === 0) {
+    el.innerHTML = '<div class="alert-card ok"><div class="alert-title">✅ Nenhum alerta ativo</div><div class="alert-body">Todos os clientes estão dentro do intervalo normal de compras.</div></div>';
+  } else {
+    el.innerHTML = alertas.map(a => `
+      <div class="alert-card ${a.tipo === 'danger' ? '' : a.tipo}">
+        <div class="alert-title">${a.titulo}</div>
+        <div class="alert-body">${a.corpo}</div>
+        <div class="alert-action" onclick="showScreen('clientes')">${a.acao} →</div>
+      </div>`).join('');
+  }
+}
+
+// =====================================================
+// OPORTUNIDADES
+// =====================================================
+function comRenderOportunidades() {
+  const opps = [];
+  const pedidos = comPedidosPeriodo(COM_PERIODO_DIAS);
+
+  // Clientes em crescimento
+  (STATE.clientes || []).forEach(c => {
+    const pedsRecentes = (STATE.pedidos || []).filter(p => p.cliente_id === c.id && p.status !== 'recusado');
+    if (pedsRecentes.length < 2) return;
+    pedsRecentes.sort((a, b) => new Date(b.data || b.createdAt || 0) - new Date(a.data || a.createdAt || 0));
+    const metade = Math.floor(pedsRecentes.length / 2);
+    const recentes = pedsRecentes.slice(0, metade);
+    const antigos  = pedsRecentes.slice(metade);
+    const valRec = recentes.reduce((s, p) => s + comValorPedido(p), 0) / recentes.length;
+    const valAnt = antigos.reduce((s, p) => s + comValorPedido(p), 0) / antigos.length;
+    if (valRec > valAnt * 1.3 && valAnt > 50) {
+      opps.push({
+        icon: '📈', titulo: c.nome + ' em crescimento',
+        desc: `Ticket médio subiu ${Math.round(((valRec / valAnt) - 1) * 100)}% nos últimos pedidos.`,
+        valor: `Potencial: ${moeda(valRec * 2)}`, prioridade: valRec
+      });
+    }
+  });
+
+  // Marcas pouco exploradas por cliente
+  const marcasGlobais = new Set();
+  pedidos.forEach(p => { if (p.industria_id) marcasGlobais.add(p.industria_id); });
+  (STATE.clientes || []).forEach(c => {
+    const marcasCli = new Set(
+      (STATE.pedidos || []).filter(p => p.cliente_id === c.id).map(p => p.industria_id).filter(Boolean)
+    );
+    const ausentes = [...marcasGlobais].filter(m => !marcasCli.has(m));
+    if (ausentes.length > 0 && marcasCli.size > 0) {
+      const nomes = ausentes.map(m => {
+        const ind = (STATE.industrias || []).find(x => x.id === m);
+        return ind ? ind.nome : m;
+      }).slice(0, 3).join(', ');
+      opps.push({
+        icon: '🏭', titulo: 'Marca não explorada — ' + c.nome,
+        desc: `Cliente nunca comprou: ${nomes}`,
+        valor: 'Oportunidade de mix', prioridade: ausentes.length * 5
+      });
+    }
+  });
+
+  // Produtos parados (sem venda no período)
+  const prodVendidos = new Set();
+  pedidos.forEach(p => (p.itens || p.items || []).forEach(i => prodVendidos.add(i.produto_id || i.produto_nome || i.nome)));
+  const prodParados = (STATE.produtos || []).filter(p => !prodVendidos.has(p.id) && !prodVendidos.has(p.nome));
+  if (prodParados.length > 0) {
+    opps.push({
+      icon: '📦', titulo: `${prodParados.length} produto(s) sem venda`,
+      desc: `Produtos cadastrados sem nenhuma venda nos últimos ${COM_PERIODO_DIAS} dias: ${prodParados.slice(0, 3).map(p => p.nome).join(', ')}${prodParados.length > 3 ? '...' : ''}`,
+      valor: 'Ativar vendas', prioridade: prodParados.length
+    });
+  }
+
+  opps.sort((a, b) => b.prioridade - a.prioridade);
+
+  const el = document.getElementById('com-opp-list');
+  el.innerHTML = opps.length === 0
+    ? '<div style="color:var(--text-muted);font-size:13px;">Nenhuma oportunidade detectada no período. Adicione mais pedidos para análise.</div>'
+    : opps.map(o => `
+      <div class="opp-card">
+        <div class="opp-icon">${o.icon}</div>
+        <div class="opp-body">
+          <div class="opp-title">${o.titulo}</div>
+          <div class="opp-desc">${o.desc}</div>
+          <div class="opp-value">${o.valor}</div>
+        </div>
+      </div>`).join('');
+}
+
+// =====================================================
+// SUGESTÕES DE REPOSIÇÃO
+// =====================================================
+function comRenderSugestoes() {
+  const sugestoes = [];
+  const hoje5 = new Date();
+
+  (STATE.clientes || []).forEach(c => {
+    const pedsCli = (STATE.pedidos || []).filter(p => p.cliente_id === c.id && p.status !== 'recusado');
+    if (pedsCli.length < 2) return;
+    pedsCli.sort((a, b) => new Date(b.data || b.createdAt || 0) - new Date(a.data || a.createdAt || 0));
+
+    const ultimoPed = pedsCli[0];
+    const diasSemComprar = diffDias(hoje5, new Date(ultimoPed.data || ultimoPed.createdAt || 0));
+
+    // Intervalo médio
+    const datas = pedsCli.map(p => new Date(p.data || p.createdAt || 0)).sort((a, b) => a - b);
+    const diffs = [];
+    for (let i = 1; i < datas.length; i++) diffs.push(diffDias(datas[i], datas[i-1]));
+    const intervalo = Math.round(diffs.reduce((s, d) => s + d, 0) / diffs.length);
+
+    if (diasSemComprar >= intervalo * 0.8) {
+      // Produtos mais comprados por esse cliente
+      const contProd = {};
+      pedsCli.forEach(p => {
+        (p.itens || p.items || []).forEach(i => {
+          const nome = i.produto_nome || i.nome || '?';
+          contProd[nome] = (contProd[nome] || 0) + 1;
+        });
+      });
+      const topProd = Object.entries(contProd).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      if (topProd.length > 0) {
+        sugestoes.push({
+          cliente: c.nome,
+          clienteId: c.id,
+          diasSem: diasSemComprar,
+          intervalo,
+          produtos: topProd.map(([nome]) => nome)
+        });
+      }
+    }
+  });
+
+  sugestoes.sort((a, b) => b.diasSem - a.diasSem);
+
+  const el = document.getElementById('com-sugestoes-list');
+  el.innerHTML = sugestoes.length === 0
+    ? '<div style="color:var(--text-muted);font-size:13px;">Nenhuma sugestão no momento. O sistema precisa de pelo menos 2 pedidos por cliente para calcular o intervalo.</div>'
+    : sugestoes.map(s => `
+      <div class="sugestao-card">
+        <div class="sugestao-cliente">${s.cliente} — <span style="font-weight:400;color:var(--text-muted);">${s.diasSem} dias sem comprar (média: ${s.intervalo} dias)</span></div>
+        ${s.produtos.map(p => `<div class="sugestao-item">• ${p}</div>`).join('')}
+        <div style="margin-top:8px;">
+          <button onclick="abrirModalPedido('${s.clienteId}')" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">📦 Criar Pedido</button>
+        </div>
+      </div>`).join('');
+}
+
+// =====================================================
+// CURVA ABC
+// =====================================================
+function comRenderABC() {
+  const pedidos = comPedidosPeriodo(COM_PERIODO_DIAS);
+
+  // ABC Produtos
+  const fatProd = {};
+  pedidos.forEach(p => {
+    (p.itens || p.items || []).forEach(i => {
+      const nome = i.produto_nome || i.nome || '?';
+      const val  = Number(i.preco || i.price || 0) * Number(i.quantidade || i.qtd || 1);
+      fatProd[nome] = (fatProd[nome] || 0) + val;
+    });
+  });
+  const listaProd = Object.entries(fatProd).sort((a, b) => b[1] - a[1]);
+  const totalProd = listaProd.reduce((s, [, v]) => s + v, 0) || 1;
+  let acumProd = 0;
+  const abcProd = listaProd.map(([nome, val]) => {
+    acumProd += val;
+    const pct = acumProd / totalProd;
+    const classe = pct <= 0.5 ? 'a' : pct <= 0.8 ? 'b' : 'c';
+    return { nome, val, pct: Math.round((val / totalProd) * 100), classe };
+  });
+
+  document.getElementById('com-abc-list').innerHTML = abcProd.length === 0
+    ? '<p style="color:var(--text-muted);font-size:13px;">Sem dados no período</p>'
+    : abcProd.slice(0, 30).map(p => `
+      <div class="dash5-bar-row">
+        <span class="abc-chip abc-${p.classe}">${p.classe.toUpperCase()}</span>
+        <div class="dash5-bar-label" style="min-width:100px;">${p.nome}</div>
+        <div class="dash5-bar-track"><div class="dash5-bar-fill" style="width:${p.pct}%;background:${p.classe==='a'?'var(--success)':p.classe==='b'?'var(--warning)':'var(--danger)'};"></div></div>
+        <div class="dash5-bar-val">${p.pct}%</div>
+      </div>`).join('');
+
+  // ABC Clientes
+  const fatCli = {};
+  pedidos.forEach(p => { fatCli[p.cliente_id] = (fatCli[p.cliente_id] || 0) + comValorPedido(p); });
+  const listaCli = Object.entries(fatCli).sort((a, b) => b[1] - a[1]);
+  const totalCli = listaCli.reduce((s, [, v]) => s + v, 0) || 1;
+  let acumCli = 0;
+  const abcCli = listaCli.map(([cid, val]) => {
+    acumCli += val;
+    const pct = acumCli / totalCli;
+    const classe = pct <= 0.5 ? 'a' : pct <= 0.8 ? 'b' : 'c';
+    const c = (STATE.clientes || []).find(x => x.id === cid);
+    return { nome: c ? c.nome : '?', val, pct: Math.round((val / totalCli) * 100), classe };
+  });
+
+  document.getElementById('com-abc-clientes').innerHTML = abcCli.length === 0
+    ? '<p style="color:var(--text-muted);font-size:13px;">Sem dados no período</p>'
+    : abcCli.slice(0, 20).map(c => `
+      <div class="dash5-bar-row">
+        <span class="abc-chip abc-${c.classe}">${c.classe.toUpperCase()}</span>
+        <div class="dash5-bar-label" style="min-width:100px;">${c.nome}</div>
+        <div class="dash5-bar-track"><div class="dash5-bar-fill" style="width:${c.pct}%;background:${c.classe==='a'?'var(--primary)':c.classe==='b'?'var(--warning)':'var(--text-muted)'};"></div></div>
+        <div class="dash5-bar-val">${moeda(c.val)}</div>
+      </div>`).join('');
+}
+
+// =====================================================
+// METAS
+// =====================================================
+function comCarregarMetas() {
+  try { return JSON.parse(localStorage.getItem(COM_METAS_KEY) || '[]'); } catch { return []; }
+}
+function comSalvarMetasLocal(metas) {
+  localStorage.setItem(COM_METAS_KEY, JSON.stringify(metas));
+}
+
+function comRenderMetas() {
+  const metas = comCarregarMetas();
+  const mesAtual = new Date().toISOString().substring(0, 7);
+  const pedidosMes = (STATE.pedidos || []).filter(p => {
+    const d = (p.data || p.createdAt || '').substring(0, 7);
+    return d === mesAtual && p.status !== 'recusado';
+  });
+  const fatMes = pedidosMes.reduce((s, p) => s + comValorPedido(p), 0);
+
+  const el = document.getElementById('com-metas-list');
+  if (metas.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhuma meta definida. Clique em "+ Meta" para criar.</div>';
+    return;
+  }
+  el.innerHTML = metas.map((m, idx) => {
+    let atual = 0;
+    if (m.tipo === 'faturamento') atual = fatMes;
+    else if (m.tipo === 'pedidos') atual = pedidosMes.length;
+    else if (m.tipo === 'marca') {
+      atual = pedidosMes.filter(p => (p.industria_nome || '').toLowerCase().includes((m.nome || '').toLowerCase()))
+        .reduce((s, p) => s + comValorPedido(p), 0);
+    } else if (m.tipo === 'cliente') {
+      const c = (STATE.clientes || []).find(x => x.nome && x.nome.toLowerCase().includes((m.nome || '').toLowerCase()));
+      if (c) atual = pedidosMes.filter(p => p.cliente_id === c.id).reduce((s, p) => s + comValorPedido(p), 0);
+    }
+    const pct = m.valor > 0 ? Math.min(Math.round((atual / m.valor) * 100), 100) : 0;
+    const done = pct >= 100;
+    return `
+      <div class="meta-row">
+        <div class="meta-info">
+          <div class="meta-nome">${m.descricao || m.nome}</div>
+          <div class="meta-pct">${pct}% — ${moeda(atual)} / ${moeda(m.valor)}</div>
+        </div>
+        <div class="meta-track"><div class="meta-fill ${done ? 'done' : ''}" style="width:${pct}%;"></div></div>
+        <div class="meta-val">${pct}%</div>
+        <button onclick="comExcluirMeta(${idx})" style="background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;">×</button>
+      </div>`;
+  }).join('');
+}
+
+function comAbrirMeta() {
+  document.getElementById('com-meta-form').style.display = 'block';
+  document.getElementById('com-meta-mes').value = new Date().toISOString().substring(0, 7);
+}
+
+function comSalvarMeta() {
+  const tipo  = document.getElementById('com-meta-tipo').value;
+  const nome  = document.getElementById('com-meta-nome').value.trim();
+  const valor = Number(document.getElementById('com-meta-valor').value);
+  const mes   = document.getElementById('com-meta-mes').value;
+  if (!nome || !valor) { toast('⚠️ Preencha nome e valor!'); return; }
+  const metas = comCarregarMetas();
+  metas.push({ tipo, descricao: nome, nome, valor, mes, criadaEm: new Date().toISOString() });
+  comSalvarMetasLocal(metas);
+  document.getElementById('com-meta-form').style.display = 'none';
+  toast('✅ Meta salva!');
+  comRenderMetas();
+}
+
+function comExcluirMeta(idx) {
+  const metas = comCarregarMetas();
+  metas.splice(idx, 1);
+  comSalvarMetasLocal(metas);
+  comRenderMetas();
+}
+
+// =====================================================
+// COMISSÃO
+// =====================================================
+function comCarregarComissoes() {
+  try { return JSON.parse(localStorage.getItem(COM_COM_KEY) || '{}'); } catch { return {}; }
+}
+function comSalvarComissoesLocal(obj) {
+  localStorage.setItem(COM_COM_KEY, JSON.stringify(obj));
+}
+
+function comRenderComissao() {
+  const comissoes = comCarregarComissoes();
+  const pedidos   = STATE.pedidos || [];
+
+  // KPIs de comissão
+  let comRec = 0, comPrev = 0;
+  pedidos.forEach(p => {
+    const marcaKey = p.industria_nome || p.industria_id || '';
+    const pct = comissoes[marcaKey] || Number(p.comissao || 0);
+    const val = comValorPedido(p) * pct / 100;
+    if (p.status === 'faturado') comRec += val;
+    else if (['aberto','andamento','atendido'].includes(p.status)) comPrev += val;
+  });
+
+  document.getElementById('com-com-kpis').innerHTML = `
+    <div class="dash5-kpi"><div style="font-size:20px;">💰</div><div class="dash5-kpi-value">${moeda(comRec)}</div><div class="dash5-kpi-label">Comissão Recebida</div></div>
+    <div class="dash5-kpi"><div style="font-size:20px;">⏳</div><div class="dash5-kpi-value">${moeda(comPrev)}</div><div class="dash5-kpi-label">Comissão Prevista</div></div>
+    <div class="dash5-kpi"><div style="font-size:20px;">📊</div><div class="dash5-kpi-value">${moeda(comRec + comPrev)}</div><div class="dash5-kpi-label">Total Estimado</div></div>`;
+
+  // Comissão por marca
+  const marcas = {};
+  pedidos.forEach(p => {
+    const marcaKey = p.industria_nome || p.industria_id || 'Sem marca';
+    if (!marcas[marcaKey]) marcas[marcaKey] = { fat: 0, com: 0 };
+    const pct = comissoes[marcaKey] || Number(p.comissao || 0);
+    marcas[marcaKey].fat += comValorPedido(p);
+    marcas[marcaKey].com += comValorPedido(p) * pct / 100;
+  });
+  const listaMarcas = Object.entries(marcas).sort((a, b) => b[1].com - a[1].com);
+  document.getElementById('com-comissao-marcas').innerHTML = listaMarcas.length === 0
+    ? '<p style="color:var(--text-muted);font-size:13px;">Sem dados de comissão</p>'
+    : listaMarcas.map(([nome, d]) => `
+      <div class="dash5-bar-row">
+        <div class="dash5-bar-label">${nome}</div>
+        <div style="flex:1;font-size:12px;color:var(--text-muted);">Fat: ${moeda(d.fat)}</div>
+        <div class="dash5-bar-val" style="color:var(--success);">${moeda(d.com)}</div>
+      </div>`).join('');
+
+  // Histórico mensal
+  const porMes = {};
+  pedidos.forEach(p => {
+    const m = mesAno(p.data || p.createdAt);
+    if (!m) return;
+    if (!porMes[m]) porMes[m] = 0;
+    const marcaKey = p.industria_nome || p.industria_id || '';
+    const pct = comissoes[marcaKey] || Number(p.comissao || 0);
+    porMes[m] += comValorPedido(p) * pct / 100;
+  });
+  const meses = Object.entries(porMes).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 12);
+  document.getElementById('com-comissao-historico').innerHTML = meses.length === 0
+    ? '<p style="color:var(--text-muted);font-size:13px;">Sem histórico</p>'
+    : meses.map(([m, v]) => `
+      <div class="dash5-bar-row">
+        <div class="dash5-bar-label">${m}</div>
+        <div class="dash5-bar-val" style="color:var(--success);">${moeda(v)}</div>
+      </div>`).join('');
+}
+
+function comAbrirComissao() {
+  const comissoes = comCarregarComissoes();
+  const marcas = new Set();
+  (STATE.pedidos || []).forEach(p => { if (p.industria_nome || p.industria_id) marcas.add(p.industria_nome || p.industria_id); });
+  (STATE.industrias || []).forEach(i => marcas.add(i.nome));
+  const form = document.getElementById('com-comissao-form');
+  const inputs = document.getElementById('com-comissao-inputs');
+  inputs.innerHTML = [...marcas].map(m => `
+    <div class="form-group">
+      <label class="form-label">${m}</label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input class="form-control" type="number" id="com-pct-${btoa(m).replace(/[^a-z0-9]/gi,'_')}" value="${comissoes[m] || 0}" min="0" max="100" step="0.5" style="width:80px;">
+        <span style="font-size:13px;color:var(--text-muted);">%</span>
+      </div>
+    </div>`).join('');
+  form.style.display = 'block';
+}
+
+function comSalvarComissoes() {
+  const comissoes = comCarregarComissoes();
+  const marcas = new Set();
+  (STATE.pedidos || []).forEach(p => { if (p.industria_nome || p.industria_id) marcas.add(p.industria_nome || p.industria_id); });
+  (STATE.industrias || []).forEach(i => marcas.add(i.nome));
+  [...marcas].forEach(m => {
+    const id = 'com-pct-' + btoa(m).replace(/[^a-z0-9]/gi, '_');
+    const el = document.getElementById(id);
+    if (el) comissoes[m] = Number(el.value) || 0;
+  });
+  comSalvarComissoesLocal(comissoes);
+  document.getElementById('com-comissao-form').style.display = 'none';
+  toast('✅ Comissões salvas!');
+  comRenderComissao();
+}
 
 // =====================================================
 // ENGINE DE APRENDIZADO — FASE 4
