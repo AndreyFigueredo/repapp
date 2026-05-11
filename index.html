@@ -1711,60 +1711,26 @@ async function fazerLogout() {
 // =====================================================
 // FIREBASE — INIT E LISTENERS
 // =====================================================
-function initFirebase(cfg) {
-  try { firebase.initializeApp(cfg); } catch(e) {}
-  db = firebase.firestore();
-  auth = firebase.auth();
-  // Forçar leitura sempre do servidor (sem cache local) para garantir sincronização entre dispositivos
-  db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
-  // NÃO usar enablePersistence pois causa dessincronização entre dispositivos
+function iniciarListeners() {
+  // Cancela listeners anteriores para evitar duplicatas
+  unsubscribers.forEach(fn => { try { fn(); } catch(e) {} });
+  unsubscribers = [];
 
   let dadosCarregados = false;
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      usuarioAtual = user;
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('config-user-card').style.display = 'block';
-      document.getElementById('config-user-email').textContent = user.email;
-      // Atualiza info do usuário na sidebar
-      const navUser = document.getElementById('nav-user-row');
-      if (navUser) {
-        navUser.style.display = 'flex';
-        const emailEl = document.getElementById('nav-user-email-text');
-        if (emailEl) emailEl.textContent = user.email;
-        const avatarEl = document.getElementById('nav-user-avatar');
-        if (avatarEl) avatarEl.textContent = (user.email||'?')[0].toUpperCase();
-      }
-      if (!dadosCarregados) {
-        document.getElementById('loading-msg').textContent = 'Carregando dados…';
-      }
-    } else {
-      usuarioAtual = null;
+
+  const onLoad = () => {
+    if (!dadosCarregados) {
+      dadosCarregados = true;
       document.getElementById('loading').classList.add('hidden');
-      document.getElementById('login-screen').classList.remove('hidden');
-      document.getElementById('config-user-card').style.display = 'none';
-      const navUser = document.getElementById('nav-user-row');
-      if (navUser) navUser.style.display = 'none';
     }
-  });
+  };
 
   unsubscribers.push(
     db.collection('clientes').onSnapshot(snap => {
       STATE.clientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (telaAtual === 'clientes') renderClientes();
-      renderHome(); setSyncOk();
-      if (!dadosCarregados && usuarioAtual) {
-        dadosCarregados = true;
-        document.getElementById('loading').classList.add('hidden');
-      }
-    }, err => {
-      console.error('clientes:', err); setSyncOff();
-      if (!dadosCarregados) {
-        dadosCarregados = true;
-        document.getElementById('loading').classList.add('hidden');
-        toast('⚠️ Modo offline');
-      }
-    })
+      renderHome(); setSyncOk(); onLoad();
+    }, err => { console.error('clientes:', err); setSyncOff(); onLoad(); toast('⚠️ Erro ao carregar clientes'); })
   );
 
   unsubscribers.push(
@@ -1809,13 +1775,58 @@ function initFirebase(cfg) {
     }, err => { console.error('agenda:', err); setSyncOff(); })
   );
 
-  // Índice do catálogo (produtos indexados dos PDFs)
   unsubscribers.push(
     db.collection('catalogo_index').onSnapshot(snap => {
       STATE.catalogoIndex = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setSyncOk();
     }, err => { console.error('catalogo_index:', err); })
   );
+
+  unsubscribers.push(
+    db.collection('produtos').onSnapshot(snap => {
+      STATE.produtos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (telaAtual === 'produtos') renderProdutos();
+      setSyncOk();
+    }, err => { console.error('produtos:', err); setSyncOff(); })
+  );
+}
+
+function initFirebase(cfg) {
+  try { firebase.initializeApp(cfg); } catch(e) {}
+  db = firebase.firestore();
+  auth = firebase.auth();
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      usuarioAtual = user;
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('config-user-card').style.display = 'block';
+      document.getElementById('config-user-email').textContent = user.email;
+      const navUser = document.getElementById('nav-user-row');
+      if (navUser) {
+        navUser.style.display = 'flex';
+        const emailEl = document.getElementById('nav-user-email-text');
+        if (emailEl) emailEl.textContent = user.email;
+        const avatarEl = document.getElementById('nav-user-avatar');
+        if (avatarEl) avatarEl.textContent = (user.email||'?')[0].toUpperCase();
+      }
+      document.getElementById('loading-msg').textContent = 'Carregando dados…';
+      document.getElementById('loading').classList.remove('hidden');
+      // Inicia listeners SOMENTE após login confirmado
+      iniciarListeners();
+    } else {
+      // Logout: cancela todos os listeners e limpa o STATE
+      unsubscribers.forEach(fn => { try { fn(); } catch(e) {} });
+      unsubscribers = [];
+      Object.assign(STATE, { clientes:[], pedidos:[], visitas:[], industrias:[], orcamentos:[], agenda:[], produtos:[], catalogoIndex:[] });
+      usuarioAtual = null;
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('config-user-card').style.display = 'none';
+      const navUser = document.getElementById('nav-user-row');
+      if (navUser) navUser.style.display = 'none';
+    }
+  });
 }
 
 function setSyncOk() {
@@ -2774,17 +2785,7 @@ function toggleDarkMode() {
 STATE.produtos = [];
 let itensPedidoAtual = [];
 
-(function waitForDB() {
-  const waitDB = setInterval(()=>{
-    if (db) {
-      clearInterval(waitDB);
-      db.collection('produtos').onSnapshot(snap => {
-        STATE.produtos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (telaAtual === 'produtos') renderProdutos();
-      }, ()=>{});
-    }
-  }, 300);
-})();
+// Listener de produtos gerenciado em iniciarListeners()
 
 // =====================================================
 // PRODUTOS — CRUD
