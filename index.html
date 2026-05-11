@@ -1026,6 +1026,47 @@ body.dark .badge-futuro { color: #7ab4f5; }
   background: linear-gradient(90deg, var(--danger), var(--warning), var(--success));
   transition: width 0.4s;
 }
+
+/* =====================================================
+   FASE 4: PAINEL DE INTELIGÊNCIA
+   ===================================================== */
+.intel-metric-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px;
+}
+@media (min-width: 600px) { .intel-metric-grid { grid-template-columns: repeat(4, 1fr); } }
+.intel-metric-card {
+  background: var(--bg2); border-radius: 12px; padding: 14px 10px;
+  text-align: center; border: 1.5px solid var(--card-border);
+}
+.intel-metric-value {
+  font-size: 26px; font-weight: 900; color: var(--primary); line-height: 1;
+}
+.intel-metric-label {
+  font-size: 11px; color: var(--text-muted); margin-top: 4px;
+}
+.intel-brand-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--card-border);
+}
+.intel-brand-row:last-child { border-bottom: none; }
+.intel-alias-chip {
+  display: inline-block; background: var(--primary-pale); color: var(--primary);
+  border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700;
+  margin: 2px; cursor: pointer;
+}
+.intel-alias-chip:hover { background: var(--primary); color: #fff; }
+.intel-section-title {
+  font-size: 14px; font-weight: 800; color: var(--primary); margin: 14px 0 8px;
+}
+.intel-history-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--card-border); font-size: 12px;
+}
+.intel-history-row:last-child { border-bottom: none; }
+.intel-arrow { color: var(--text-muted); font-size: 14px; }
+.intel-add-alias {
+  display: flex; gap: 6px; margin-top: 8px;
+}
 </style>
 </head>
 <body>
@@ -1100,8 +1141,9 @@ body.dark .badge-futuro { color: #7ab4f5; }
   <button class="nav-item" data-screen="agenda"     onclick="showScreen('agenda')">    <span class="nav-icon">📅</span><span>Agenda</span><span class="nav-badge" id="nav-badge-agenda" style="display:none;">0</span></button>
   <button class="nav-item" data-screen="produtos"   onclick="showScreen('produtos')">  <span class="nav-icon">🏷️</span><span>Produtos</span></button>
   <button class="nav-item" data-screen="controle"   onclick="showScreen('controle')"> <span class="nav-icon">📊</span><span>Controle</span></button>
-  <button class="nav-item" data-screen="importador" onclick="showScreen('importador')"><span class="nav-icon">📥</span><span>Importar</span></button>
-  <button class="nav-item" data-screen="config"     onclick="showScreen('config')">   <span class="nav-icon">⚙️</span><span>Config</span></button>
+  <button class="nav-item" data-screen="importador"   onclick="showScreen('importador')">  <span class="nav-icon">📥</span><span>Importar</span></button>
+  <button class="nav-item" data-screen="inteligencia" onclick="showScreen('inteligencia')"><span class="nav-icon">🧠</span><span>Inteligência</span></button>
+  <button class="nav-item" data-screen="config"       onclick="showScreen('config')">      <span class="nav-icon">⚙️</span><span>Config</span></button>
 
   <!-- Usuário (desktop) -->
   <div class="nav-user-row" id="nav-user-row" style="display:none;">
@@ -1362,6 +1404,85 @@ body.dark .badge-futuro { color: #7ab4f5; }
       </div>
     </div>
 
+    <!-- INTELIGÊNCIA DO SISTEMA — FASE 4 -->
+    <div class="screen" id="screen-inteligencia">
+
+      <div class="card" style="margin-bottom:10px;">
+        <div style="font-size:16px;font-weight:800;color:var(--primary);margin-bottom:4px;">🧠 Inteligência do Sistema</div>
+        <div style="font-size:12px;color:var(--text-muted);">O sistema aprende com cada importação. Aqui você acompanha o aprendizado, gerencia aliases e veja as métricas de acerto.</div>
+      </div>
+
+      <!-- Métricas gerais -->
+      <div class="intel-metric-grid" id="intel-metrics-grid">
+        <div class="intel-metric-card">
+          <div class="intel-metric-value" id="intel-total-importacoes">0</div>
+          <div class="intel-metric-label">Importações</div>
+        </div>
+        <div class="intel-metric-card">
+          <div class="intel-metric-value" id="intel-taxa-acerto">0%</div>
+          <div class="intel-metric-label">Taxa de Acerto</div>
+        </div>
+        <div class="intel-metric-card">
+          <div class="intel-metric-value" id="intel-total-aliases">0</div>
+          <div class="intel-metric-label">Aliases Aprendidos</div>
+        </div>
+        <div class="intel-metric-card">
+          <div class="intel-metric-value" id="intel-marcas-treinadas">0</div>
+          <div class="intel-metric-label">Marcas Treinadas</div>
+        </div>
+      </div>
+
+      <!-- Marcas treinadas -->
+      <div class="card" style="margin-bottom:10px;">
+        <div class="intel-section-title">🏭 Marcas Treinadas</div>
+        <div id="intel-brands-list"><div style="color:var(--text-muted);font-size:13px;">Nenhuma marca treinada ainda.</div></div>
+      </div>
+
+      <!-- Dicionário de Aliases -->
+      <div class="card" style="margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="intel-section-title" style="margin:0;">📖 Dicionário de Aliases</div>
+          <button onclick="intelAbrirNovoAlias()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Adicionar</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin:4px 0 10px;">Ensine ao sistema como reconhecer abreviaturas e erros de OCR.</div>
+        <div id="intel-aliases-list"><div style="color:var(--text-muted);font-size:13px;">Nenhum alias cadastrado ainda.</div></div>
+        <!-- Form novo alias -->
+        <div id="intel-alias-form" style="display:none;margin-top:10px;">
+          <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:8px;">Novo Alias</div>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;">
+            <input class="form-control" id="intel-alias-de" placeholder="Texto OCR (ex: POTE HERM)">
+            <span style="font-size:18px;color:var(--text-muted);">→</span>
+            <input class="form-control" id="intel-alias-para" placeholder="Produto correto (ex: POTE HERMETICO)">
+          </div>
+          <div class="form-group" style="margin-top:8px;">
+            <label class="form-label">Marca (opcional)</label>
+            <select class="form-control" id="intel-alias-marca">
+              <option value="">Todas as marcas</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button onclick="intelSalvarAlias()" class="btn-submit" style="flex:1;">Salvar Alias</button>
+            <button onclick="document.getElementById('intel-alias-form').style.display='none'" style="flex:1;background:var(--bg2);color:var(--text);border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Histórico de Matching -->
+      <div class="card" style="margin-bottom:10px;">
+        <div class="intel-section-title">📊 Histórico de Matching</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Correspondências confirmadas que o sistema aprendeu.</div>
+        <div id="intel-history-list"><div style="color:var(--text-muted);font-size:13px;">Nenhum histórico ainda.</div></div>
+      </div>
+
+      <!-- Templates por Marca -->
+      <div class="card">
+        <div class="intel-section-title">📄 Templates por Marca</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Configurações de colunas salvas por marca para importação rápida.</div>
+        <div id="intel-templates-list"><div style="color:var(--text-muted);font-size:13px;">Nenhum template salvo ainda.</div></div>
+      </div>
+
+    </div><!-- /screen-inteligencia -->
+
     <!-- IMPORTADOR DE PEDIDOS — FASE 2 + 3 -->
     <div class="screen" id="screen-importador">
 
@@ -1441,6 +1562,12 @@ body.dark .badge-futuro { color: #7ab4f5; }
             <label class="form-label">Linha de início dos dados</label>
             <input class="form-control" type="number" id="imp-start-row" value="1" min="0" max="20" style="width:80px;">
             <span style="font-size:11px;color:var(--text-muted);margin-left:6px;">(0 = primeira linha)</span>
+          </div>
+          <div class="form-group" style="margin-top:8px;">
+            <label class="form-label">🏭 Marca / Fábrica (para aprendizado)</label>
+            <input class="form-control" type="text" id="imp-marca-excel" placeholder="Ex: Tramontina, Coza, Plasutil..." list="imp-marcas-list" onchange="impCarregarTemplateMarca(this.value)">
+            <datalist id="imp-marcas-list"></datalist>
+            <span style="font-size:11px;color:var(--text-muted);" id="imp-template-status">O sistema salva as configurações de colunas por marca para próximas importações.</span>
           </div>
           <button onclick="impProcessar()" class="btn-submit" style="width:100%;margin-top:8px;" id="btn-processar-excel">🔍 Processar e Fazer Matching</button>
         </div>
@@ -2116,7 +2243,7 @@ async function deleteDoc_(col, id) {
 // =====================================================
 // NAVEGAÇÃO
 // =====================================================
-const TITULOS = { home:'🏠 Início', clientes:'👤 Clientes', visitas:'📍 Visitas', pedidos:'📦 Pedidos', industrias:'🏭 Indústrias', orcamentos:'📋 Orçamentos', agenda:'📅 Agenda', produtos:'🏷️ Produtos', controle:'📊 Controle', importador:'📥 Importar Pedido', config:'⚙️ Configurar' };
+const TITULOS = { home:'🏠 Início', clientes:'👤 Clientes', visitas:'📍 Visitas', pedidos:'📦 Pedidos', industrias:'🏭 Indústrias', orcamentos:'📋 Orçamentos', agenda:'📅 Agenda', produtos:'🏷️ Produtos', controle:'📊 Controle', importador:'📥 Importar Pedido', inteligencia:'🧠 Inteligência', config:'⚙️ Configurar' };
 
 function showScreen(tela) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -2138,7 +2265,8 @@ function showScreen(tela) {
   if (tela==='controle')   renderControle();
   if (tela==='produtos')   renderProdutos();
   if (tela==='config')     renderConfigScreen();
-  if (tela==='importador')  impIniciar();
+  if (tela==='importador')    impIniciar();
+  if (tela==='inteligencia')  intelRender();
 }
 
 function fabAction() {
@@ -3679,6 +3807,279 @@ function compartilharWhatsApp(pid) {
 })();
 
 // =====================================================
+// ENGINE DE APRENDIZADO — FASE 4
+// =====================================================
+
+// Cache em memória para evitar múltiplas consultas Firebase
+const INTEL_CACHE = {
+  aliases:   null,   // Array de { de, para, marca, usos }
+  templates: null,   // Array de { marca, colunas, regex, ... }
+  history:   null,   // Array de { textoOCR, produtoId, produtoNome, confirmado, data }
+  metrics:   null    // { totalImportacoes, totalAcertos, totalItens }
+};
+
+// ---- Carrega dados do Firebase para cache ----
+async function intelCarregarCache() {
+  if (!window.db) return;
+  try {
+    // Aliases
+    if (!INTEL_CACHE.aliases) {
+      const snap = await window.db.collection('product_aliases').orderBy('usos','desc').limit(200).get();
+      INTEL_CACHE.aliases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+    // Templates
+    if (!INTEL_CACHE.templates) {
+      const snap = await window.db.collection('brand_templates').get();
+      INTEL_CACHE.templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+    // Histórico (últimos 100)
+    if (!INTEL_CACHE.history) {
+      const snap = await window.db.collection('matching_history').orderBy('data','desc').limit(100).get();
+      INTEL_CACHE.history = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+    // Métricas
+    if (!INTEL_CACHE.metrics) {
+      const doc = await window.db.collection('import_learning').doc('metrics').get();
+      INTEL_CACHE.metrics = doc.exists ? doc.data() : { totalImportacoes: 0, totalAcertos: 0, totalItens: 0, totalOCR: 0 };
+    }
+  } catch(e) {
+    console.warn('Intel cache error:', e.message);
+  }
+}
+
+// ---- Invalida cache (após salvar) ----
+function intelInvalidarCache(tipo) {
+  if (tipo === 'aliases')   INTEL_CACHE.aliases   = null;
+  if (tipo === 'templates') INTEL_CACHE.templates = null;
+  if (tipo === 'history')   INTEL_CACHE.history   = null;
+  if (tipo === 'metrics')   INTEL_CACHE.metrics   = null;
+  if (!tipo) { INTEL_CACHE.aliases = INTEL_CACHE.templates = INTEL_CACHE.history = INTEL_CACHE.metrics = null; }
+}
+
+// ---- Normaliza texto com aliases ----
+async function intelNormalizar(texto, marca) {
+  if (!texto) return texto;
+  await intelCarregarCache();
+  const aliases = INTEL_CACHE.aliases || [];
+  let resultado = normalizeText(texto);
+  // Aplica aliases da marca específica primeiro, depois globais
+  const relevantes = [
+    ...aliases.filter(a => a.marca && normalizeText(a.marca) === normalizeText(marca || '')),
+    ...aliases.filter(a => !a.marca)
+  ];
+  for (const alias of relevantes) {
+    const de   = normalizeText(alias.de);
+    const para = normalizeText(alias.para);
+    if (de && resultado.includes(de)) {
+      resultado = resultado.replace(new RegExp(de.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), para);
+    }
+  }
+  return resultado;
+}
+
+// ---- Salva template de marca após importação ----
+async function intelSalvarTemplate(marca, config) {
+  if (!window.db || !marca) return;
+  try {
+    const id = normalizeText(marca).replace(/\s+/g, '_');
+    await window.db.collection('brand_templates').doc(id).set({
+      marca, config,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    intelInvalidarCache('templates');
+  } catch(e) { console.warn('Erro ao salvar template:', e.message); }
+}
+
+// ---- Carrega template de marca ----
+async function intelCarregarTemplate(marca) {
+  if (!window.db || !marca) return null;
+  await intelCarregarCache();
+  const templates = INTEL_CACHE.templates || [];
+  const id = normalizeText(marca).replace(/\s+/g, '_');
+  return templates.find(t => t.id === id) || null;
+}
+
+// ---- Salva correspondência no histórico ----
+async function intelSalvarMatching(textoOCR, produtoId, produtoNome, score, metodo, marca) {
+  if (!window.db || !textoOCR || !produtoId) return;
+  try {
+    // Verifica se já existe
+    const normTexto = normalizeText(textoOCR);
+    const existing = (INTEL_CACHE.history || []).find(h => normalizeText(h.textoOCR) === normTexto && h.produtoId === produtoId);
+    if (existing) {
+      // Incrementa frequência
+      await window.db.collection('matching_history').doc(existing.id).update({ usos: (existing.usos || 1) + 1, data: new Date().toISOString() });
+    } else {
+      await window.db.collection('matching_history').add({
+        textoOCR, produtoId, produtoNome, score, metodo,
+        marca: marca || '', usos: 1, confirmado: score >= 0.85,
+        data: new Date().toISOString()
+      });
+    }
+    intelInvalidarCache('history');
+  } catch(e) { console.warn('Erro ao salvar matching:', e.message); }
+}
+
+// ---- Atualiza métricas após importação ----
+async function intelAtualizarMetricas(nOk, nWarn, nErr, tipoArquivo) {
+  if (!window.db) return;
+  try {
+    const total = nOk + nWarn + nErr;
+    const acertos = nOk + nWarn;
+    const metricsRef = window.db.collection('import_learning').doc('metrics');
+    await metricsRef.set({
+      totalImportacoes:  window.db.FieldValue ? window.db.FieldValue.increment(1) : ((INTEL_CACHE.metrics?.totalImportacoes || 0) + 1),
+      totalAcertos:      (INTEL_CACHE.metrics?.totalAcertos || 0) + acertos,
+      totalItens:        (INTEL_CACHE.metrics?.totalItens || 0) + total,
+      ultimaImportacao:  new Date().toISOString(),
+      tipoUltimo:        tipoArquivo || 'excel'
+    }, { merge: true });
+    intelInvalidarCache('metrics');
+  } catch(e) { console.warn('Erro ao atualizar métricas:', e.message); }
+}
+
+// ---- Renderiza o painel de inteligência ----
+async function intelRender() {
+  // Mostra loading
+  document.getElementById('intel-brands-list').innerHTML = '<div style="color:var(--text-muted);font-size:13px);">Carregando...</div>';
+  await intelCarregarCache();
+
+  const aliases   = INTEL_CACHE.aliases   || [];
+  const templates = INTEL_CACHE.templates || [];
+  const history   = INTEL_CACHE.history   || [];
+  const metrics   = INTEL_CACHE.metrics   || {};
+
+  // Métricas
+  const totalItens   = metrics.totalItens   || 0;
+  const totalAcertos = metrics.totalAcertos || 0;
+  const taxaAcerto   = totalItens > 0 ? Math.round((totalAcertos / totalItens) * 100) : 0;
+  document.getElementById('intel-total-importacoes').textContent = metrics.totalImportacoes || 0;
+  document.getElementById('intel-taxa-acerto').textContent       = taxaAcerto + '%';
+  document.getElementById('intel-total-aliases').textContent     = aliases.length;
+  document.getElementById('intel-marcas-treinadas').textContent  = templates.length;
+
+  // Marcas treinadas
+  const brandsEl = document.getElementById('intel-brands-list');
+  if (templates.length === 0) {
+    brandsEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhuma marca treinada ainda. Importe uma planilha para começar.</div>';
+  } else {
+    brandsEl.innerHTML = templates.map(t => `
+      <div class="intel-brand-row">
+        <div>
+          <div style="font-weight:700;font-size:13px;">${t.marca}</div>
+          <div style="font-size:11px;color:var(--text-muted);">Atualizado: ${t.updatedAt ? t.updatedAt.substring(0,10) : '—'}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span class="conf-badge conf-high">${t.config?.colunaCodigo !== undefined ? 'Colunas OK' : 'Parcial'}</span>
+          <button onclick="intelExcluirTemplate('${t.id}')" style="background:var(--danger-pale);color:var(--danger);border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Excluir</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // Aliases
+  const aliasesEl = document.getElementById('intel-aliases-list');
+  // Preenche select de marcas no form
+  const selMarca = document.getElementById('intel-alias-marca');
+  if (selMarca) {
+    selMarca.innerHTML = '<option value="">Todas as marcas</option>';
+    templates.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.marca; o.textContent = t.marca;
+      selMarca.appendChild(o);
+    });
+  }
+  if (aliases.length === 0) {
+    aliasesEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhum alias cadastrado. Adicione abreviaturas e erros de OCR comuns.</div>';
+  } else {
+    aliasesEl.innerHTML = aliases.slice(0, 50).map(a => `
+      <div class="intel-history-row">
+        <span class="intel-alias-chip" title="Clique para excluir" onclick="intelExcluirAlias('${a.id}')">${a.de}</span>
+        <span class="intel-arrow">→</span>
+        <span style="font-weight:700;font-size:12px;">${a.para}</span>
+        ${a.marca ? '<span style="font-size:10px;color:var(--text-muted);">('+a.marca+')</span>' : ''}
+        <span style="margin-left:auto;font-size:10px;color:var(--text-muted);">${a.usos || 0}x</span>
+      </div>`).join('');
+  }
+
+  // Histórico
+  const histEl = document.getElementById('intel-history-list');
+  if (history.length === 0) {
+    histEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhum histórico ainda. O sistema aprende após a primeira importação.</div>';
+  } else {
+    histEl.innerHTML = history.slice(0, 30).map(h => `
+      <div class="intel-history-row">
+        <span style="font-family:monospace;font-size:11px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${h.textoOCR}">${h.textoOCR || '—'}</span>
+        <span class="intel-arrow">→</span>
+        <span style="font-weight:700;font-size:12px;flex:1;">${h.produtoNome || '—'}</span>
+        <span class="conf-badge ${h.score >= 0.85 ? 'conf-high' : h.score >= 0.5 ? 'conf-medium' : 'conf-low'}">${Math.round((h.score||0)*100)}%</span>
+      </div>`).join('');
+  }
+
+  // Templates
+  const templatesEl = document.getElementById('intel-templates-list');
+  if (templates.length === 0) {
+    templatesEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhum template salvo. Importe uma planilha e o sistema salvará automaticamente.</div>';
+  } else {
+    templatesEl.innerHTML = templates.map(t => `
+      <div class="intel-brand-row">
+        <div>
+          <div style="font-weight:700;font-size:13px;">${t.marca}</div>
+          <div style="font-size:11px;color:var(--text-muted);">Código: col ${t.config?.colunaCodigo ?? '?'} · Qtd: col ${t.config?.colunaQtd ?? '?'} · Desc: col ${t.config?.colunaDesc ?? '?'}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ---- Abre form de novo alias ----
+function intelAbrirNovoAlias() {
+  document.getElementById('intel-alias-form').style.display = 'block';
+  document.getElementById('intel-alias-de').value = '';
+  document.getElementById('intel-alias-para').value = '';
+  document.getElementById('intel-alias-de').focus();
+}
+
+// ---- Salva novo alias ----
+async function intelSalvarAlias() {
+  const de   = document.getElementById('intel-alias-de').value.trim();
+  const para = document.getElementById('intel-alias-para').value.trim();
+  const marca = document.getElementById('intel-alias-marca').value;
+  if (!de || !para) { toast('⚠️ Preencha os dois campos!'); return; }
+  if (!window.db) { toast('❌ Firebase não conectado!'); return; }
+  try {
+    await window.db.collection('product_aliases').add({
+      de, para, marca: marca || '', usos: 0,
+      createdAt: new Date().toISOString()
+    });
+    intelInvalidarCache('aliases');
+    document.getElementById('intel-alias-form').style.display = 'none';
+    toast('✅ Alias salvo: "' + de + '" → "' + para + '"');
+    intelRender();
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+// ---- Exclui alias ----
+async function intelExcluirAlias(id) {
+  if (!window.db) return;
+  try {
+    await window.db.collection('product_aliases').doc(id).delete();
+    intelInvalidarCache('aliases');
+    toast('🗑️ Alias excluído');
+    intelRender();
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+// ---- Exclui template ----
+async function intelExcluirTemplate(id) {
+  if (!window.db) return;
+  try {
+    await window.db.collection('brand_templates').doc(id).delete();
+    intelInvalidarCache('templates');
+    toast('🗑️ Template excluído');
+    intelRender();
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+// =====================================================
 // IMPORTADOR DE PEDIDOS — FASE 2 + 3
 // =====================================================
 let impWorkbook = null;
@@ -3963,7 +4364,7 @@ function normalizeText(t) {
 }
 
 // Inicializa a tela do importador
-function impIniciar() {
+async function impIniciar() {
   // Preenche o select de clientes
   const sel = document.getElementById('imp-cliente-select');
   if (sel) {
@@ -3973,6 +4374,38 @@ function impIniciar() {
       o.value = c.id; o.textContent = c.nome;
       sel.appendChild(o);
     });
+  }
+  // FASE 4: Preenche datalist de marcas com templates salvos
+  try {
+    await intelCarregarCache();
+    const templates = INTEL_CACHE.templates || [];
+    const dl = document.getElementById('imp-marcas-list');
+    if (dl) {
+      dl.innerHTML = '';
+      templates.forEach(t => {
+        const o = document.createElement('option');
+        o.value = t.marca;
+        dl.appendChild(o);
+      });
+    }
+  } catch(e) { /* silencioso */ }
+}
+
+// FASE 4: Carrega template de marca e aplica colunas automaticamente
+async function impCarregarTemplateMarca(marca) {
+  if (!marca) return;
+  const template = await intelCarregarTemplate(marca);
+  const statusEl = document.getElementById('imp-template-status');
+  if (template && template.config) {
+    const c = template.config;
+    if (c.colunaCodigo !== undefined) document.getElementById('imp-col-codigo').value = c.colunaCodigo;
+    if (c.colunaQtd    !== undefined) document.getElementById('imp-col-qtd').value    = c.colunaQtd;
+    if (c.colunaDesc   !== undefined) document.getElementById('imp-col-desc').value   = c.colunaDesc;
+    if (c.linhaInicio  !== undefined) document.getElementById('imp-start-row').value  = c.linhaInicio;
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--success);font-weight:700;">✅ Template carregado para ' + marca + '! Colunas preenchidas automaticamente.</span>';
+    toast('🧠 Template da marca "' + marca + '" carregado!');
+  } else {
+    if (statusEl) statusEl.textContent = 'Marca nova — o sistema aprenderá após a primeira importação.';
   }
 }
 
@@ -4313,6 +4746,18 @@ async function impProcessar() {
   impLog('✅ Matching concluído: ' + nOk + ' exatos, ' + nWarn + ' parciais, ' + nErr + ' não encontrados');
   impProgress(100, 'Concluído!');
 
+  // FASE 4: Salva template da marca em background
+  const marcaExcel = document.getElementById('imp-marca-excel')?.value?.trim();
+  if (marcaExcel) {
+    intelSalvarTemplate(marcaExcel, {
+      colunaCodigo: colCod,
+      colunaQtd:    colQtd,
+      colunaDesc:   colDesc,
+      linhaInicio:  startRow,
+      planilha:     sheetName
+    }).catch(e => console.warn('Template save error:', e.message));
+  }
+
   await new Promise(r => setTimeout(r, 400));
 
   // Renderiza resultado
@@ -4399,6 +4844,28 @@ async function impGerarPedido() {
   try {
     await addDoc_('pedidos', pedidoData);
     toast('✅ Pedido gerado com ' + itens.length + ' itens! Total: R$ ' + total.toFixed(2));
+
+    // FASE 4: Aprendizado automático em background
+    const nOk   = impResultados.filter(r => r.prodEncontrado && r.score >= 0.85).length;
+    const nWarn = impResultados.filter(r => r.prodEncontrado && r.score >= 0.5 && r.score < 0.85).length;
+    const nErr  = impResultados.filter(r => !r.prodEncontrado).length;
+    const tipoArquivo = impTabAtual || 'excel';
+
+    // Salva histórico de matching (em background, sem bloquear)
+    Promise.all([
+      intelAtualizarMetricas(nOk, nWarn, nErr, tipoArquivo),
+      ...impResultados
+        .filter(r => r.prodEncontrado && (r.codPedido || r.descPedido))
+        .map(r => intelSalvarMatching(
+          r.descPedido || r.codPedido,
+          r.prodEncontrado.id,
+          r.prodEncontrado.nome,
+          r.score,
+          r.metodo,
+          ''
+        ))
+    ]).catch(e => console.warn('Aprendizado background error:', e.message));
+
     impVoltar();
     showScreen('pedidos');
   } catch(err) {
