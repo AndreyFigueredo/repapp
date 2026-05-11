@@ -9,6 +9,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<!-- Importador Inteligente FASE 2 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/7.0.0/fuse.min.js"></script>
 
 <style>
 /* =====================================================
@@ -949,6 +952,43 @@ body.dark .badge-futuro { color: #7ab4f5; }
   .app-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .main-content { padding: 16px; padding-bottom: calc(var(--nav-height) + 20px); }
 }
+
+/* =====================================================
+   IMPORTADOR DE PEDIDOS — FASE 2
+   ===================================================== */
+.imp-dropzone {
+  border: 2px dashed var(--primary);
+  border-radius: 14px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg2);
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+.imp-dropzone.drag { border-color: var(--accent); background: var(--accent-pale); }
+.imp-dropzone:hover { border-color: var(--primary-light); background: var(--primary-pale); }
+
+.imp-match-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.imp-match-table th { background: var(--primary); color: #fff; padding: 7px 10px; text-align: left; font-size: 11px; }
+.imp-match-table td { padding: 7px 10px; border-bottom: 1px solid var(--card-border); vertical-align: middle; }
+.imp-match-table tr:hover td { background: var(--bg2); }
+
+.conf-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 99px;
+  font-size: 10px; font-weight: 700;
+}
+.conf-high   { background: var(--success-pale); color: var(--success); }
+.conf-medium { background: var(--warning-pale); color: var(--warning); }
+.conf-low    { background: var(--danger-pale);  color: var(--danger); }
+.conf-none   { background: var(--bg2); color: var(--text-muted); }
+
+.imp-log {
+  font-size: 11px; font-family: monospace;
+  color: var(--text-muted); max-height: 140px;
+  overflow-y: auto; background: var(--bg2);
+  border-radius: 8px; padding: 8px;
+}
 </style>
 </head>
 <body>
@@ -1023,6 +1063,7 @@ body.dark .badge-futuro { color: #7ab4f5; }
   <button class="nav-item" data-screen="agenda"     onclick="showScreen('agenda')">    <span class="nav-icon">📅</span><span>Agenda</span><span class="nav-badge" id="nav-badge-agenda" style="display:none;">0</span></button>
   <button class="nav-item" data-screen="produtos"   onclick="showScreen('produtos')">  <span class="nav-icon">🏷️</span><span>Produtos</span></button>
   <button class="nav-item" data-screen="controle"   onclick="showScreen('controle')"> <span class="nav-icon">📊</span><span>Controle</span></button>
+  <button class="nav-item" data-screen="importador" onclick="showScreen('importador')"><span class="nav-icon">📥</span><span>Importar</span></button>
   <button class="nav-item" data-screen="config"     onclick="showScreen('config')">   <span class="nav-icon">⚙️</span><span>Config</span></button>
 
   <!-- Usuário (desktop) -->
@@ -1283,6 +1324,108 @@ body.dark .badge-futuro { color: #7ab4f5; }
 
       </div>
     </div>
+
+    <!-- IMPORTADOR DE PEDIDOS — FASE 2 -->
+    <div class="screen" id="screen-importador">
+
+      <div class="card" style="margin-bottom:10px;">
+        <div style="font-size:16px;font-weight:800;color:var(--primary);margin-bottom:4px;">📥 Importador de Pedidos</div>
+        <div style="font-size:12px;color:var(--text-muted);">Envie uma planilha de pedido (Excel/CSV) e o sistema reconhece os produtos automaticamente usando o banco cadastrado.</div>
+      </div>
+
+      <!-- PASSO 1: Upload -->
+      <div id="imp-step1">
+        <div class="imp-dropzone" id="imp-dropzone"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="impHandleDrop(event)">
+          <div style="font-size:36px;margin-bottom:8px;">📂</div>
+          <div style="font-weight:700;font-size:14px;color:var(--primary);">Arraste a planilha de pedido aqui</div>
+          <div style="font-size:12px;color:var(--text-muted);margin:4px 0 10px;">XLS · XLSX · CSV</div>
+          <label class="btn-submit" style="cursor:pointer;padding:8px 20px;font-size:13px;display:inline-block;">
+            Selecionar Arquivo
+            <input type="file" id="imp-file-input" accept=".xls,.xlsx,.csv" style="display:none;" onchange="impHandleFile(event)">
+          </label>
+        </div>
+        <div class="card" id="imp-config-card" style="display:none;">
+          <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:10px;">⚙️ Configuração</div>
+          <div class="form-group">
+            <label class="form-label">Cliente do Pedido</label>
+            <select class="form-control" id="imp-cliente-select"><option value="">Selecionar cliente...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Planilha</label>
+            <select class="form-control" id="imp-sheet-select" onchange="impLoadSheet()"></select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
+            <div class="form-group">
+              <label class="form-label">Coluna Código</label>
+              <select class="form-control" id="imp-col-codigo"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Coluna Qtd</label>
+              <select class="form-control" id="imp-col-qtd"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Coluna Descrição</label>
+              <select class="form-control" id="imp-col-desc"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Linha de início dos dados</label>
+            <input class="form-control" type="number" id="imp-start-row" value="1" min="0" max="20" style="width:80px;">
+            <span style="font-size:11px;color:var(--text-muted);margin-left:6px;">(0 = primeira linha)</span>
+          </div>
+          <button onclick="impProcessar()" class="btn-submit" style="width:100%;margin-top:8px;">🔍 Processar e Fazer Matching</button>
+        </div>
+      </div>
+
+      <!-- PASSO 2: Processando -->
+      <div id="imp-step2" style="display:none;">
+        <div class="card" style="text-align:center;padding:32px 20px;">
+          <div style="font-size:40px;margin-bottom:12px;">⚙️</div>
+          <div style="font-weight:700;font-size:15px;color:var(--primary);" id="imp-status-text">Processando...</div>
+          <div style="margin-top:12px;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;">
+            <div id="imp-progress-bar" style="height:100%;background:var(--primary);border-radius:4px;transition:width 0.3s;width:0%;"></div>
+          </div>
+          <div id="imp-log" class="imp-log" style="margin-top:12px;text-align:left;"></div>
+        </div>
+      </div>
+
+      <!-- PASSO 3: Resultado do Matching -->
+      <div id="imp-step3" style="display:none;">
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-weight:700;font-size:14px;color:var(--primary);">📊 Resultado do Matching — <span id="imp-result-count">0</span> itens</div>
+            <div style="display:flex;gap:6px;">
+              <span id="imp-badge-ok" class="conf-badge conf-high">0 encontrados</span>
+              <span id="imp-badge-warn" class="conf-badge conf-medium">0 parciais</span>
+              <span id="imp-badge-err" class="conf-badge conf-none">0 não encontrados</span>
+            </div>
+          </div>
+          <div style="overflow-x:auto;max-height:320px;overflow-y:auto;">
+            <table class="imp-match-table">
+              <thead>
+                <tr>
+                  <th>Código Pedido</th>
+                  <th>Descrição Pedido</th>
+                  <th>Qtd</th>
+                  <th>Produto Encontrado</th>
+                  <th>Confiança</th>
+                  <th>Preço</th>
+                </tr>
+              </thead>
+              <tbody id="imp-match-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button onclick="impVoltar()" style="flex:1;padding:12px;background:var(--bg2);color:var(--text);border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">← Voltar</button>
+          <button onclick="impGerarPedido()" class="btn-submit" style="flex:2;padding:12px;font-size:14px;">✅ Gerar Pedido Automaticamente</button>
+        </div>
+      </div>
+
+    </div><!-- /screen-importador -->
 
   </main>
 </div>
@@ -1880,7 +2023,7 @@ async function deleteDoc_(col, id) {
 // =====================================================
 // NAVEGAÇÃO
 // =====================================================
-const TITULOS = { home:'🏠 Início', clientes:'👤 Clientes', visitas:'📍 Visitas', pedidos:'📦 Pedidos', industrias:'🏭 Indústrias', orcamentos:'📋 Orçamentos', agenda:'📅 Agenda', produtos:'🏷️ Produtos', controle:'📊 Controle', config:'⚙️ Configurar' };
+const TITULOS = { home:'🏠 Início', clientes:'👤 Clientes', visitas:'📍 Visitas', pedidos:'📦 Pedidos', industrias:'🏭 Indústrias', orcamentos:'📋 Orçamentos', agenda:'📅 Agenda', produtos:'🏷️ Produtos', controle:'📊 Controle', importador:'📥 Importar Pedido', config:'⚙️ Configurar' };
 
 function showScreen(tela) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1902,6 +2045,7 @@ function showScreen(tela) {
   if (tela==='controle')   renderControle();
   if (tela==='produtos')   renderProdutos();
   if (tela==='config')     renderConfigScreen();
+  if (tela==='importador')  impIniciar();
 }
 
 function fabAction() {
@@ -3440,6 +3584,354 @@ function compartilharWhatsApp(pid) {
     toast('❌ Erro Firebase: '+e.message);
   }
 })();
+
+// =====================================================
+// IMPORTADOR DE PEDIDOS — FASE 2
+// =====================================================
+let impWorkbook = null;
+let impResultados = [];
+
+// Normaliza texto para matching
+function normalizeText(t) {
+  if (!t) return '';
+  return String(t)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')                     // remove especiais
+    .replace(/\s+/g, ' ')                              // colapsa espaços
+    .trim();
+}
+
+// Inicializa a tela do importador
+function impIniciar() {
+  // Preenche o select de clientes
+  const sel = document.getElementById('imp-cliente-select');
+  if (sel) {
+    sel.innerHTML = '<option value="">Selecionar cliente...</option>';
+    (STATE.clientes || []).forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.nome;
+      sel.appendChild(o);
+    });
+  }
+}
+
+// Drag & Drop
+function impHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('imp-dropzone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) impCarregarArquivo(file);
+}
+
+// Input file
+function impHandleFile(e) {
+  const file = e.target.files[0];
+  if (file) impCarregarArquivo(file);
+}
+
+// Carrega e parseia o arquivo
+function impCarregarArquivo(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      impWorkbook = XLSX.read(data, { type: 'array' });
+      // Preenche select de planilhas
+      const sheetSel = document.getElementById('imp-sheet-select');
+      sheetSel.innerHTML = '';
+      impWorkbook.SheetNames.forEach(name => {
+        const o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        sheetSel.appendChild(o);
+      });
+      impLoadSheet();
+      document.getElementById('imp-config-card').style.display = 'block';
+      toast('✅ Arquivo carregado: ' + file.name);
+    } catch(err) {
+      toast('❌ Erro ao ler arquivo: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Carrega a planilha selecionada e detecta colunas
+function impLoadSheet() {
+  if (!impWorkbook) return;
+  const sheetName = document.getElementById('imp-sheet-select').value;
+  const ws = impWorkbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  if (!rows || rows.length === 0) return;
+
+  // Pega a primeira linha não vazia como cabeçalho
+  let headerRow = rows[0];
+  const startRowEl = document.getElementById('imp-start-row');
+  const startRow = parseInt(startRowEl.value) || 0;
+  if (startRow > 0 && rows[startRow]) headerRow = rows[startRow - 1];
+
+  const cols = headerRow.map((h, i) => ({ idx: i, label: String(h || 'Coluna ' + (i+1)) }));
+
+  // Preenche selects de colunas
+  ['imp-col-codigo', 'imp-col-qtd', 'imp-col-desc'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="-1">(nenhuma)</option>';
+    cols.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.idx; o.textContent = c.label;
+      sel.appendChild(o);
+    });
+  });
+
+  // Auto-detecta colunas por nome
+  const autoDetect = (keywords) => {
+    const idx = cols.findIndex(c => keywords.some(k => normalizeText(c.label).includes(k)));
+    return idx >= 0 ? cols[idx].idx : -1;
+  };
+  const codIdx  = autoDetect(['cod', 'sku', 'ref', 'codigo', 'referencia', 'item']);
+  const qtdIdx  = autoDetect(['qtd', 'quant', 'quantidade', 'qty', 'qde']);
+  const descIdx = autoDetect(['desc', 'nome', 'produto', 'descricao', 'descri']);
+
+  if (codIdx  >= 0) document.getElementById('imp-col-codigo').value = codIdx;
+  if (qtdIdx  >= 0) document.getElementById('imp-col-qtd').value    = qtdIdx;
+  if (descIdx >= 0) document.getElementById('imp-col-desc').value   = descIdx;
+}
+
+// Adiciona linha ao log de processamento
+function impLog(msg) {
+  const el = document.getElementById('imp-log');
+  if (el) { el.innerHTML += msg + '<br>'; el.scrollTop = el.scrollHeight; }
+}
+
+// Atualiza barra de progresso
+function impProgress(pct, txt) {
+  const bar = document.getElementById('imp-progress-bar');
+  const lbl = document.getElementById('imp-status-text');
+  if (bar) bar.style.width = pct + '%';
+  if (lbl && txt) lbl.textContent = txt;
+}
+
+// Processa o arquivo e faz o matching
+async function impProcessar() {
+  if (!impWorkbook) { toast('❌ Selecione um arquivo primeiro!'); return; }
+
+  // Mostra tela de processamento
+  document.getElementById('imp-step1').style.display = 'none';
+  document.getElementById('imp-step2').style.display = 'block';
+  document.getElementById('imp-step3').style.display = 'none';
+  document.getElementById('imp-log').innerHTML = '';
+  impProgress(5, 'Lendo planilha...');
+
+  await new Promise(r => setTimeout(r, 50)); // yield para render
+
+  const sheetName = document.getElementById('imp-sheet-select').value;
+  const ws = impWorkbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  const startRow = parseInt(document.getElementById('imp-start-row').value) || 0;
+  const colCod   = parseInt(document.getElementById('imp-col-codigo').value);
+  const colQtd   = parseInt(document.getElementById('imp-col-qtd').value);
+  const colDesc  = parseInt(document.getElementById('imp-col-desc').value);
+
+  // Filtra linhas de dados
+  const dataRows = rows.slice(startRow + 1).filter(r =>
+    r.some(c => String(c).trim() !== '')
+  );
+
+  impLog('ℹ️ ' + dataRows.length + ' linhas encontradas na planilha');
+  impProgress(15, 'Carregando produtos do Firebase...');
+
+  // Cache de produtos (usa STATE se já carregado)
+  const produtos = STATE.produtos || [];
+  impLog('ℹ️ ' + produtos.length + ' produtos no banco');
+
+  if (produtos.length === 0) {
+    impLog('⚠️ Nenhum produto cadastrado no banco. Cadastre produtos primeiro.');
+    impProgress(100, 'Concluído com avisos');
+    return;
+  }
+
+  impProgress(30, 'Construindo índice de busca...');
+  await new Promise(r => setTimeout(r, 30));
+
+  // Constrói índice Fuse.js para matching por descrição
+  const fuseIndex = new Fuse(produtos, {
+    keys: [
+      { name: 'nome',      weight: 0.5 },
+      { name: 'sku',       weight: 0.4 },
+      { name: 'descricao', weight: 0.1 }
+    ],
+    threshold: 0.45,
+    includeScore: true,
+    ignoreLocation: true,
+    useExtendedSearch: false
+  });
+
+  // Mapa de SKU exato para lookup rápido
+  const skuMap = {};
+  produtos.forEach(p => {
+    if (p.sku) skuMap[normalizeText(p.sku)] = p;
+  });
+
+  impProgress(50, 'Fazendo matching de produtos...');
+  impResultados = [];
+
+  let nOk = 0, nWarn = 0, nErr = 0;
+
+  for (let i = 0; i < dataRows.length; i++) {
+    const row = dataRows[i];
+    const codPedido  = colCod  >= 0 ? String(row[colCod]  || '').trim() : '';
+    const qtdPedido  = colQtd  >= 0 ? parseFloat(row[colQtd]  || 1) || 1 : 1;
+    const descPedido = colDesc >= 0 ? String(row[colDesc] || '').trim() : '';
+
+    if (!codPedido && !descPedido) continue; // linha vazia
+
+    let prodEncontrado = null;
+    let score = 0;
+    let metodo = '';
+
+    // 1. Busca por código exato
+    if (codPedido) {
+      const normCod = normalizeText(codPedido);
+      if (skuMap[normCod]) {
+        prodEncontrado = skuMap[normCod];
+        score = 1.0;
+        metodo = 'código exato';
+      }
+    }
+
+    // 2. Busca por descrição com Fuse.js
+    if (!prodEncontrado && descPedido) {
+      const results = fuseIndex.search(descPedido);
+      if (results.length > 0) {
+        const best = results[0];
+        score = Math.round((1 - best.score) * 100) / 100;
+        if (score >= 0.55) {
+          prodEncontrado = best.item;
+          metodo = 'descrição (' + Math.round(score * 100) + '%)';
+        }
+      }
+    }
+
+    // 3. Busca por código parcial (contido no SKU)
+    if (!prodEncontrado && codPedido) {
+      const normCod = normalizeText(codPedido);
+      const partial = produtos.find(p => p.sku && normalizeText(p.sku).includes(normCod));
+      if (partial) {
+        prodEncontrado = partial;
+        score = 0.7;
+        metodo = 'código parcial';
+      }
+    }
+
+    const item = {
+      codPedido, descPedido, qtdPedido,
+      prodEncontrado, score, metodo
+    };
+    impResultados.push(item);
+
+    if (prodEncontrado && score >= 0.85)      nOk++;
+    else if (prodEncontrado && score >= 0.55) nWarn++;
+    else                                      nErr++;
+
+    impProgress(50 + Math.round((i / dataRows.length) * 40), 'Matching ' + (i+1) + '/' + dataRows.length + '...');
+    if (i % 10 === 0) await new Promise(r => setTimeout(r, 10));
+  }
+
+  impLog('✅ Matching concluído: ' + nOk + ' exatos, ' + nWarn + ' parciais, ' + nErr + ' não encontrados');
+  impProgress(100, 'Concluído!');
+
+  await new Promise(r => setTimeout(r, 400));
+
+  // Renderiza resultado
+  impRenderResultado(nOk, nWarn, nErr);
+}
+
+// Renderiza a tabela de resultado
+function impRenderResultado(nOk, nWarn, nErr) {
+  document.getElementById('imp-step2').style.display = 'none';
+  document.getElementById('imp-step3').style.display = 'block';
+
+  document.getElementById('imp-result-count').textContent = impResultados.length;
+  document.getElementById('imp-badge-ok').textContent   = nOk + ' encontrados';
+  document.getElementById('imp-badge-warn').textContent = nWarn + ' parciais';
+  document.getElementById('imp-badge-err').textContent  = nErr + ' não encontrados';
+
+  const tbody = document.getElementById('imp-match-body');
+  tbody.innerHTML = '';
+
+  impResultados.forEach((item, idx) => {
+    const p = item.prodEncontrado;
+    const pct = Math.round(item.score * 100);
+    let confClass = 'conf-none', confLabel = 'Não encontrado';
+    if (p && pct >= 85) { confClass = 'conf-high';   confLabel = pct + '% — ' + item.metodo; }
+    else if (p && pct >= 55) { confClass = 'conf-medium'; confLabel = pct + '% — ' + item.metodo; }
+    else if (p) { confClass = 'conf-low'; confLabel = pct + '%'; }
+
+    const preco = p ? 'R$ ' + (p.preco || 0).toFixed(2) : '—';
+    const total = p ? 'R$ ' + ((p.preco || 0) * item.qtdPedido).toFixed(2) : '—';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-family:monospace;font-weight:700;">${item.codPedido || '—'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item.descPedido}">${item.descPedido || '—'}</td>
+      <td style="text-align:center;font-weight:700;">${item.qtdPedido}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p ? p.nome : ''}"><b>${p ? p.nome : '<span style="color:var(--danger)">❌ Não encontrado</span>'}</b>${p ? '<br><span style="font-size:10px;color:var(--text-muted);">' + (p.sku || '') + '</span>' : ''}</td>
+      <td><span class="conf-badge ${confClass}">${confLabel}</span></td>
+      <td style="font-weight:700;">${preco}<br><span style="font-size:10px;color:var(--text-muted);">Total: ${total}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Volta para o passo 1
+function impVoltar() {
+  document.getElementById('imp-step1').style.display = 'block';
+  document.getElementById('imp-step2').style.display = 'none';
+  document.getElementById('imp-step3').style.display = 'none';
+  impResultados = [];
+}
+
+// Gera o pedido no Firestore
+async function impGerarPedido() {
+  const clienteId = document.getElementById('imp-cliente-select').value;
+  if (!clienteId) { toast('⚠️ Selecione um cliente antes de gerar o pedido!'); return; }
+
+  const itens = impResultados
+    .filter(r => r.prodEncontrado)
+    .map(r => ({
+      produto_id:   r.prodEncontrado.id,
+      produto_nome: r.prodEncontrado.nome,
+      produto_sku:  r.prodEncontrado.sku || '',
+      qtd:          r.qtdPedido,
+      preco:        r.prodEncontrado.preco || 0,
+      total:        (r.prodEncontrado.preco || 0) * r.qtdPedido
+    }));
+
+  if (itens.length === 0) { toast('❌ Nenhum produto encontrado para gerar pedido!'); return; }
+
+  const total = itens.reduce((s, i) => s + i.total, 0);
+  const cliente = STATE.clientes.find(c => c.id === clienteId);
+
+  const pedidoData = {
+    cliente_id:   clienteId,
+    cliente_nome: cliente ? cliente.nome : '',
+    items:        itens,
+    total:        total,
+    status:       'rascunho',
+    origem:       'importador',
+    data:         hoje(),
+    createdAt:    new Date().toISOString()
+  };
+
+  try {
+    await addDoc_('pedidos', pedidoData);
+    toast('✅ Pedido gerado com ' + itens.length + ' itens! Total: R$ ' + total.toFixed(2));
+    impVoltar();
+    showScreen('pedidos');
+  } catch(err) {
+    toast('❌ Erro ao salvar pedido: ' + err.message);
+  }
+}
 </script>
 </body>
 </html>
