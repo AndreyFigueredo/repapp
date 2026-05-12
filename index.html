@@ -2219,6 +2219,9 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
         <button onclick="ativarModoSelecao()" style="flex:1;min-width:140px;padding:10px;background:var(--warning);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
           ☑️ Selecionar
         </button>
+        <button onclick="abrirVincularFabrica()" style="flex:1;min-width:140px;padding:10px;background:#7c3aed;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          🏭 Vincular Fábrica
+        </button>
       </div>
       <!-- Barra de seleção múltipla -->
       <div id="barra-selecao-produtos" style="display:none;padding:8px 16px;background:var(--primary-pale);border-radius:10px;margin:0 16px 10px;display:none;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -2226,6 +2229,7 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
         <button onclick="selecionarTodosProdutos()" style="padding:6px 12px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Selecionar Todos</button>
         <button onclick="desmarcarTodosProdutos()" style="padding:6px 12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Desmarcar</button>
         <button onclick="excluirProdutosSelecionados()" style="padding:6px 12px;background:var(--danger);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Excluir Selecionados</button>
+        <button onclick="abrirVincularFabricaSelecionados()" style="padding:6px 12px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🏭 Vincular Fábrica</button>
         <button onclick="fecharModoSelecao()" style="padding:6px 12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✕ Cancelar</button>
       </div>
       <div id="lista-produtos"></div>
@@ -3134,6 +3138,58 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
       <button onclick="selecionarTodasMarcas()" style="flex:1;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Selecionar Todas</button>
       <button onclick="confirmarExcluirMarcas()" style="flex:1;padding:10px;background:var(--danger);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">🗑️ Excluir Selecionadas</button>
     </div>
+  </div>
+</div>
+<!-- MODAL: VINCULAR FÁBRICA EM LOTE -->
+<div class="modal-overlay" id="modal-vincular-fabrica">
+  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <span class="modal-title">🏭 Vincular Fábrica em Lote</span>
+      <button class="modal-close" onclick="fecharModal('modal-vincular-fabrica')">✕</button>
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;" id="vincular-fabrica-subtitulo">
+      Selecione os produtos e a fábrica/indústria para vincular.
+    </div>
+    <!-- Filtro de quais produtos mostrar -->
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">Filtrar produtos</label>
+      <select class="form-control" id="vincular-filtro" onchange="renderVincularLista()">
+        <option value="sem_marca">Apenas sem fábrica vinculada</option>
+        <option value="todos">Todos os produtos</option>
+        <option value="marca">Por fábrica específica</option>
+      </select>
+    </div>
+    <div class="form-group" id="vincular-filtro-marca-group" style="display:none;margin-bottom:10px;">
+      <label class="form-label">Fábrica atual para filtrar</label>
+      <select class="form-control" id="vincular-filtro-marca" onchange="renderVincularLista()">
+        <option value="">Selecione...</option>
+      </select>
+    </div>
+    <!-- Busca rápida -->
+    <div class="form-group" style="margin-bottom:10px;">
+      <input type="text" class="form-control" id="vincular-busca" placeholder="🔍 Buscar produto por nome ou código..." oninput="renderVincularLista()" style="font-size:13px;">
+    </div>
+    <!-- Seleção de fábrica destino -->
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label">Fábrica / Indústria a vincular</label>
+      <select class="form-control" id="vincular-fabrica-destino">
+        <option value="">— selecione a fábrica —</option>
+      </select>
+    </div>
+    <!-- Lista de produtos -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span id="vincular-count-label" style="font-size:12px;color:var(--text-muted);">0 produtos</span>
+      <div style="display:flex;gap:8px;">
+        <button onclick="vincularSelecionarTodos()" style="padding:5px 10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Selecionar Todos</button>
+        <button onclick="vincularDesmarcarTodos()" style="padding:5px 10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Desmarcar</button>
+      </div>
+    </div>
+    <div id="vincular-lista-produtos" style="max-height:300px;overflow-y:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:10px;"></div>
+    <!-- Resumo e confirmar -->
+    <div id="vincular-resumo" style="background:var(--primary-pale);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--primary);margin-bottom:14px;display:none;"></div>
+    <button onclick="confirmarVincularFabrica()" style="width:100%;padding:12px;background:#7c3aed;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+      🏭 Vincular Fábrica aos Selecionados
+    </button>
   </div>
 </div>
 <!-- MODAL: IMPORTAR CATÁLOGO PDF -->
@@ -7374,6 +7430,148 @@ async function impProdProcessar() {
     ${erros > 0 ? `<div style="font-size:13px;color:#dc2626;margin-top:4px;">${erros} erros</div>` : ''}
   `;
 }
+
+// ============================================================
+// VINCULAR FÁBRICA EM LOTE
+// ============================================================
+function abrirVincularFabrica() {
+  _vincularModoSelecao = false;
+  _vincularPreSelecionados = [];
+  _popularVincularFabricaModal();
+  abrirModal('modal-vincular-fabrica');
+}
+
+function abrirVincularFabricaSelecionados() {
+  // Pega os IDs já selecionados no modo de seleção múltipla
+  _vincularModoSelecao = true;
+  _vincularPreSelecionados = Array.from(document.querySelectorAll('.produto-check:checked')).map(cb => cb.value);
+  if (_vincularPreSelecionados.length === 0) { toast('Selecione ao menos um produto.'); return; }
+  _popularVincularFabricaModal();
+  abrirModal('modal-vincular-fabrica');
+}
+
+function _popularVincularFabricaModal() {
+  // Popular select de fábrica destino
+  const sel = document.getElementById('vincular-fabrica-destino');
+  if (sel) {
+    sel.innerHTML = '<option value="">— selecione a fábrica —</option>' +
+      STATE.industrias.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+  }
+  // Popular select de filtro por marca
+  const selFiltroMarca = document.getElementById('vincular-filtro-marca');
+  if (selFiltroMarca) {
+    selFiltroMarca.innerHTML = '<option value="">Selecione...</option>' +
+      STATE.industrias.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+  }
+  // Subtítulo
+  const sub = document.getElementById('vincular-fabrica-subtitulo');
+  if (sub) {
+    const semMarca = STATE.produtos.filter(p => !p.industriaId).length;
+    sub.textContent = semMarca > 0
+      ? `Há ${semMarca} produto(s) sem fábrica vinculada. Selecione os produtos e a fábrica desejada.`
+      : 'Selecione os produtos e a fábrica/indústria para vincular.';
+  }
+  // Resetar filtro para "sem marca"
+  const filtroEl = document.getElementById('vincular-filtro');
+  if (filtroEl) filtroEl.value = 'sem_marca';
+  document.getElementById('vincular-filtro-marca-group').style.display = 'none';
+  document.getElementById('vincular-busca').value = '';
+  renderVincularLista();
+}
+
+function renderVincularLista() {
+  const filtro = document.getElementById('vincular-filtro')?.value || 'sem_marca';
+  const filtroBusca = (document.getElementById('vincular-busca')?.value || '').toLowerCase().trim();
+  const filtroMarcaId = document.getElementById('vincular-filtro-marca')?.value || '';
+  
+  // Mostrar/ocultar filtro de marca específica
+  const grupoMarca = document.getElementById('vincular-filtro-marca-group');
+  if (grupoMarca) grupoMarca.style.display = filtro === 'marca' ? 'block' : 'none';
+
+  // Filtrar produtos
+  let produtos = STATE.produtos;
+  if (filtro === 'sem_marca') {
+    produtos = produtos.filter(p => !p.industriaId);
+  } else if (filtro === 'marca' && filtroMarcaId) {
+    produtos = produtos.filter(p => p.industriaId === filtroMarcaId);
+  }
+  if (filtroBusca) {
+    produtos = produtos.filter(p =>
+      (p.nome || '').toLowerCase().includes(filtroBusca) ||
+      (p.sku || '').toLowerCase().includes(filtroBusca)
+    );
+  }
+
+  const lista = document.getElementById('vincular-lista-produtos');
+  const countLabel = document.getElementById('vincular-count-label');
+  if (countLabel) countLabel.textContent = `${produtos.length} produto(s)`;
+
+  if (!produtos.length) {
+    lista.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Nenhum produto encontrado.</div>';
+    atualizarResumoVincular();
+    return;
+  }
+
+  lista.innerHTML = produtos.map(p => {
+    const ind = STATE.industrias.find(i => i.id === p.industriaId);
+    const marcaAtual = ind ? `<span style="font-size:11px;color:var(--primary);background:var(--primary-pale);padding:2px 6px;border-radius:6px;">${ind.nome}</span>` : `<span style="font-size:11px;color:var(--text-muted);">Sem fábrica</span>`;
+    const presel = _vincularPreSelecionados && _vincularPreSelecionados.includes(p.id);
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--card);">
+      <input type="checkbox" class="vincular-prod-check" value="${p.id}" onchange="atualizarResumoVincular()" ${presel ? 'checked' : ''}>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nome || p.sku || '—'}</div>
+        <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-top:2px;">
+          ${p.sku ? `<span>SKU: ${p.sku}</span>` : ''}
+          ${marcaAtual}
+        </div>
+      </div>
+    </label>`;
+  }).join('');
+
+  atualizarResumoVincular();
+}
+
+function vincularSelecionarTodos() {
+  document.querySelectorAll('.vincular-prod-check').forEach(cb => cb.checked = true);
+  atualizarResumoVincular();
+}
+function vincularDesmarcarTodos() {
+  document.querySelectorAll('.vincular-prod-check').forEach(cb => cb.checked = false);
+  atualizarResumoVincular();
+}
+function atualizarResumoVincular() {
+  const selecionados = document.querySelectorAll('.vincular-prod-check:checked').length;
+  const resumo = document.getElementById('vincular-resumo');
+  if (!resumo) return;
+  if (selecionados === 0) { resumo.style.display = 'none'; return; }
+  const fabId = document.getElementById('vincular-fabrica-destino')?.value;
+  const fabNome = fabId ? (STATE.industrias.find(i => i.id === fabId)?.nome || fabId) : '(nenhuma selecionada)';
+  resumo.style.display = 'block';
+  resumo.innerHTML = `🏭 <strong>${selecionados} produto(s)</strong> serão vinculados à fábrica <strong>${fabNome}</strong>.`;
+}
+
+async function confirmarVincularFabrica() {
+  const selecionados = Array.from(document.querySelectorAll('.vincular-prod-check:checked')).map(cb => cb.value);
+  if (selecionados.length === 0) { toast('Selecione ao menos um produto.'); return; }
+  const fabId = document.getElementById('vincular-fabrica-destino')?.value;
+  if (!fabId) { toast('Selecione a fábrica de destino.'); return; }
+  const fabNome = STATE.industrias.find(i => i.id === fabId)?.nome || fabId;
+  let ok = 0;
+  for (const id of selecionados) {
+    try {
+      await updateDoc_('produtos', id, { industriaId: fabId });
+      ok++;
+    } catch(e) {}
+  }
+  fecharModal('modal-vincular-fabrica');
+  if (_vincularModoSelecao) fecharModoSelecao();
+  toast(`🏭 ${ok} produto(s) vinculado(s) à fábrica "${fabNome}"!`);
+}
+
+// variáveis auxiliares do modal de vincular
+let _vincularModoSelecao = false;
+let _vincularPreSelecionados = [];
+
 </script>
 </body>
 </html>
