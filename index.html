@@ -2195,36 +2195,26 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
 
     <!-- PRODUTOS -->
     <div class="screen" id="screen-produtos">
-      <!-- Barra de busca + filtro por marca -->
-      <div style="padding:0 16px 10px;display:flex;gap:8px;align-items:center;">
-        <div class="search-bar" style="flex:1;margin:0;">
+      <!-- Barra superior: busca + botões de ação -->
+      <div style="padding:0 16px 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="search-bar" style="flex:1;min-width:180px;margin:0;">
           <span>🔍</span>
-          <input type="text" class="search-input" placeholder="Buscar produto..." id="search-produtos" oninput="renderProdutos()">
+          <input type="text" class="search-input" placeholder="Buscar marca ou produto..." id="search-produtos" oninput="renderProdutos()">
         </div>
-        <select id="filtro-marca-produtos" class="form-control" style="width:auto;min-width:130px;padding:8px 10px;font-size:13px;" onchange="renderProdutos()">
-          <option value="">Todas as marcas</option>
-        </select>
+        <button onclick="novoProduto()" style="padding:8px 14px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Produto</button>
+        <button onclick="abrirImportarProdutosExcel()" style="padding:8px 14px;background:#16a34a;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📊 Importar</button>
+        <button onclick="mostrarMenuProdutos(this)" style="padding:8px 14px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;position:relative;">⋯ Mais</button>
       </div>
-      <!-- Barra de ações -->
-      <div style="padding:0 16px 10px;display:flex;gap:8px;flex-wrap:wrap;">
-        <button onclick="abrirImportarProdutosExcel()" style="flex:1;min-width:140px;padding:10px;background:#16a34a;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          📊 Importar Excel/CSV
-        </button>
-        <button onclick="abrirImportarCatalogo()" style="flex:1;min-width:140px;padding:10px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          📄 Importar Catálogo PDF
-        </button>
-        <button onclick="abrirExcluirPorMarca()" style="flex:1;min-width:140px;padding:10px;background:var(--danger);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          🗑️ Excluir por Marca
-        </button>
-        <button onclick="ativarModoSelecao()" style="flex:1;min-width:140px;padding:10px;background:var(--warning);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          ☑️ Selecionar
-        </button>
-        <button onclick="abrirVincularFabrica()" style="flex:1;min-width:140px;padding:10px;background:#7c3aed;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          🏭 Vincular Fábrica
-        </button>
+      <!-- Menu "Mais" (dropdown) -->
+      <div id="menu-mais-produtos" style="display:none;position:fixed;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:8px;min-width:200px;">
+        <button onclick="abrirImportarCatalogo();fecharMenuProdutos()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:none;border-radius:8px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'">📄 Importar Catálogo PDF</button>
+        <button onclick="abrirVincularFabrica();fecharMenuProdutos()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:none;border-radius:8px;font-size:13px;font-weight:600;color:#7c3aed;cursor:pointer;text-align:left;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'">🏭 Vincular Fábrica</button>
+        <button onclick="ativarModoSelecao();fecharMenuProdutos()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:none;border-radius:8px;font-size:13px;font-weight:600;color:var(--warning);cursor:pointer;text-align:left;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'">☑️ Selecionar Produtos</button>
+        <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+        <button onclick="abrirExcluirPorMarca();fecharMenuProdutos()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:none;border-radius:8px;font-size:13px;font-weight:600;color:var(--danger);cursor:pointer;text-align:left;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'">🗑️ Excluir por Marca</button>
       </div>
       <!-- Barra de seleção múltipla -->
-      <div id="barra-selecao-produtos" style="display:none;padding:8px 16px;background:var(--primary-pale);border-radius:10px;margin:0 16px 10px;display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div id="barra-selecao-produtos" style="display:none;padding:8px 16px;background:var(--primary-pale);border-radius:10px;margin:0 16px 10px;align-items:center;gap:10px;flex-wrap:wrap;">
         <span id="qtd-selecionados-produtos" style="font-size:13px;font-weight:700;color:var(--primary);">0 selecionados</span>
         <button onclick="selecionarTodosProdutos()" style="padding:6px 12px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Selecionar Todos</button>
         <button onclick="desmarcarTodosProdutos()" style="padding:6px 12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Desmarcar</button>
@@ -2232,7 +2222,8 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
         <button onclick="abrirVincularFabricaSelecionados()" style="padding:6px 12px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🏭 Vincular Fábrica</button>
         <button onclick="fecharModoSelecao()" style="padding:6px 12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✕ Cancelar</button>
       </div>
-      <div id="lista-produtos"></div>
+      <!-- Grid de marcas -->
+      <div id="lista-produtos" style="padding:0 16px 80px;"></div>
     </div>
 
     <!-- CONFIG / FIREBASE SETUP -->
@@ -3138,6 +3129,23 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
       <button onclick="selecionarTodasMarcas()" style="flex:1;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Selecionar Todas</button>
       <button onclick="confirmarExcluirMarcas()" style="flex:1;padding:10px;background:var(--danger);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">🗑️ Excluir Selecionadas</button>
     </div>
+  </div>
+</div>
+<!-- MODAL: DETALHES DA MARCA -->
+<div class="modal-overlay" id="modal-detalhes-marca">
+  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <span class="modal-title" id="detalhes-marca-titulo">🏭 Marca</span>
+      <button class="modal-close" onclick="fecharModal('modal-detalhes-marca')">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <span id="detalhes-marca-count" style="font-size:13px;color:var(--text-muted);"></span>
+      <div style="display:flex;gap:8px;">
+        <button id="detalhes-marca-novo" style="padding:7px 12px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">+ Novo Produto</button>
+        <button id="detalhes-marca-import" style="padding:7px 12px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">📊 Importar</button>
+      </div>
+    </div>
+    <div id="detalhes-marca-lista" style="border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:55vh;overflow-y:auto;"></div>
   </div>
 </div>
 <!-- MODAL: VINCULAR FÁBRICA EM LOTE -->
@@ -4598,41 +4606,205 @@ let _produtosSelecionados = new Set();
 
 function renderProdutos() {
   const busca = (document.getElementById('search-produtos')?.value||'').toLowerCase();
-  const marcaFiltro = document.getElementById('filtro-marca-produtos')?.value || '';
-  // Atualizar select de marcas
-  atualizarFiltroMarcas();
-  const filtrados = STATE.produtos.filter(p => {
-    const matchBusca = p.nome.toLowerCase().includes(busca) ||
-      (p.categoria||'').toLowerCase().includes(busca) ||
-      (p.sku||'').toLowerCase().includes(busca);
-    const matchMarca = !marcaFiltro || p.industriaId === marcaFiltro;
-    return matchBusca && matchMarca;
-  });
   const lista = document.getElementById('lista-produtos');
   if (!lista) return;
-  if (filtrados.length === 0) {
-    lista.innerHTML = '<div class="empty-state"><div class="empty-icon">🏷️</div><div class="empty-text">'+(STATE.produtos.length===0?'Nenhum produto cadastrado':'Nenhum resultado')+'</div></div>';
+
+  if (STATE.produtos.length === 0) {
+    lista.innerHTML = '<div class="empty-state"><div class="empty-icon">🏷️</div><div class="empty-text">Nenhum produto cadastrado</div></div>';
     return;
   }
-  lista.innerHTML = filtrados.map(p => {
+
+  // Separar produtos com e sem marca
+  const comMarca = {};   // industriaId -> [produtos]
+  const semMarca = [];
+
+  STATE.produtos.forEach(p => {
+    const nm = (p.nome||'').toLowerCase();
+    const sk = (p.sku||'').toLowerCase();
+    const ct = (p.categoria||'').toLowerCase();
     const ind = STATE.industrias.find(i => i.id === p.industriaId);
-    const selecionado = _produtosSelecionados.has(p.id);
-    const precoFinal = calcularPrecoFinal(p);
-    return `
-    <div class="produto-card ${selecionado ? 'produto-selecionado' : ''}" onclick="${_modoSelecaoProdutos ? `toggleSelecionarProduto('${p.id}')` : `editarProduto('${p.id}')`}">
-      ${_modoSelecaoProdutos ? `<div class="produto-checkbox"><input type="checkbox" ${selecionado ? 'checked' : ''} onclick="event.stopPropagation();toggleSelecionarProduto('${p.id}')"></div>` : '<div class="produto-icon">🏷️</div>'}
-      <div class="produto-info">
-        <div class="produto-nome">${p.nome}</div>
-        <div class="produto-sub">${ind?'🏭 '+ind.nome+' · ':''} ${p.categoria||'Sem categoria'}${p.sku?' · Ref: '+p.sku:''}</div>
-        ${p.embalagem > 1 ? `<div class="produto-sub" style="color:var(--primary)">📦 Emb: ${p.embalagem} un</div>` : ''}
+    const nomeInd = ind ? ind.nome.toLowerCase() : '';
+    const matchBusca = !busca || nm.includes(busca) || sk.includes(busca) || ct.includes(busca) || nomeInd.includes(busca);
+    if (!matchBusca) return;
+    if (p.industriaId) {
+      if (!comMarca[p.industriaId]) comMarca[p.industriaId] = [];
+      comMarca[p.industriaId].push(p);
+    } else {
+      semMarca.push(p);
+    }
+  });
+
+  let html = '';
+
+  // ---- Cards de marcas ----
+  // Ordenar marcas por nome
+  const marcasOrdenadas = Object.keys(comMarca).sort((a, b) => {
+    const na = (STATE.industrias.find(i => i.id === a)?.nome || '').toLowerCase();
+    const nb = (STATE.industrias.find(i => i.id === b)?.nome || '').toLowerCase();
+    return na.localeCompare(nb);
+  });
+
+  if (marcasOrdenadas.length > 0) {
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px;">`;
+    marcasOrdenadas.forEach(indId => {
+      const ind = STATE.industrias.find(i => i.id === indId);
+      const nomeMarca = ind ? ind.nome : indId;
+      const prods = comMarca[indId];
+      const totalPreco = prods.reduce((s, p) => s + (calcularPrecoFinal(p) || 0), 0);
+      const comPreco = prods.filter(p => (p.preco || 0) > 0).length;
+      const semPreco = prods.length - comPreco;
+      html += `
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:box-shadow 0.15s,border-color 0.15s;"
+           onclick="abrirDetalhesMarca('${indId}')"
+           onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.12)';this.style.borderColor='var(--primary)'"
+           onmouseout="this.style.boxShadow='';this.style.borderColor='var(--border)'">
+        <!-- Header do card -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:15px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nomeMarca}</div>
+          </div>
+          <div style="display:flex;gap:6px;margin-left:8px;">
+            <button onclick="event.stopPropagation();novoProdutoMarca('${indId}')" title="Novo produto nesta marca" style="padding:4px 8px;background:var(--primary);color:white;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">+ Produto</button>
+            <button onclick="event.stopPropagation();abrirImportarProdutosExcelMarca('${indId}')" title="Importar Excel para esta marca" style="padding:4px 8px;background:#16a34a;color:white;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">📊</button>
+          </div>
+        </div>
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+          <div style="background:var(--bg2);border-radius:8px;padding:8px 10px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px;">🏷️ Produtos</div>
+            <div style="font-size:18px;font-weight:800;color:var(--text);">${prods.length}</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:8px;padding:8px 10px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px;">💰 Com preço</div>
+            <div style="font-size:18px;font-weight:800;color:var(--text);">${comPreco}</div>
+          </div>
+        </div>
+        ${semPreco > 0 ? `<div style="font-size:12px;color:var(--warning);margin-bottom:8px;">⚠️ ${semPreco} sem preço</div>` : ''}
+        <!-- Preview dos primeiros produtos -->
+        <div style="border-top:1px solid var(--border);padding-top:8px;">
+          ${prods.slice(0,3).map(p => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);" onclick="event.stopPropagation();editarProduto('${p.id}')">
+              <div style="font-size:12px;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nome||p.sku||'—'}</div>
+              <div style="font-size:12px;font-weight:700;color:var(--primary);margin-left:8px;white-space:nowrap;">${moeda(calcularPrecoFinal(p))}</div>
+            </div>`).join('')}
+          ${prods.length > 3 ? `<div style="font-size:12px;color:var(--primary);margin-top:6px;font-weight:600;">Ver todos os ${prods.length} produtos →</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // ---- Seção: Produtos sem marca ----
+  if (semMarca.length > 0) {
+    html += `
+    <div style="background:var(--card);border:2px dashed var(--warning);border-radius:14px;padding:16px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:var(--warning);">⚠️ Sem Fábrica Vinculada</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${semMarca.length} produto(s) aguardando vinculação</div>
+        </div>
+        <button onclick="abrirVincularFabrica()" style="padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">🏭 Vincular Fábrica</button>
       </div>
-      <div style="text-align:right;">
-        <div class="produto-preco">${moeda(precoFinal)}</div>
-        ${p.desconto > 0 ? `<div style="font-size:10px;color:var(--success);">-${p.desconto}%</div>` : ''}
-        ${p.acrescimo > 0 ? `<div style="font-size:10px;color:var(--warning);">+${p.acrescimo}%</div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${semMarca.slice(0, 10).map(p => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg2);border-radius:8px;cursor:pointer;" onclick="editarProduto('${p.id}')">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nome||p.sku||'—'}</div>
+              ${p.sku ? `<div style="font-size:11px;color:var(--text-muted);">SKU: ${p.sku}</div>` : ''}
+            </div>
+            <div style="text-align:right;margin-left:10px;">
+              <div style="font-size:13px;font-weight:700;color:var(--primary);">${moeda(calcularPrecoFinal(p))}</div>
+            </div>
+          </div>`).join('')}
+        ${semMarca.length > 10 ? `<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:8px;">+ ${semMarca.length - 10} produtos não exibidos. Use "Vincular Fábrica" para gerenciar todos.</div>` : ''}
       </div>
     </div>`;
-  }).join('');
+  }
+
+  if (!html) {
+    html = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum resultado para "' + busca + '"</div></div>';
+  }
+
+  lista.innerHTML = html;
+}
+
+// Modal de detalhes da marca (lista todos os produtos)
+function abrirDetalhesMarca(indId) {
+  const ind = STATE.industrias.find(i => i.id === indId);
+  const nomeMarca = ind ? ind.nome : indId;
+  const prods = STATE.produtos.filter(p => p.industriaId === indId);
+  
+  // Reusar o modal de excluir marca como painel de detalhes (ou criar modal inline)
+  // Usar um modal simples com lista de produtos
+  const overlay = document.getElementById('modal-detalhes-marca');
+  if (!overlay) return;
+  
+  document.getElementById('detalhes-marca-titulo').textContent = '🏭 ' + nomeMarca;
+  document.getElementById('detalhes-marca-count').textContent = prods.length + ' produto(s)';
+  
+  const lista = document.getElementById('detalhes-marca-lista');
+  if (!lista) return;
+  lista.innerHTML = prods.length === 0
+    ? '<div style="text-align:center;color:var(--text-muted);padding:20px;">Nenhum produto</div>'
+    : prods.map(p => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="fecharModal('modal-detalhes-marca');editarProduto('${p.id}')">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nome||p.sku||'—'}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${p.sku ? 'SKU: '+p.sku+' · ' : ''}${p.categoria||'Sem categoria'}${p.embalagem>1?' · Emb: '+p.embalagem:''}${p.icms>0?' · ICMS: '+p.icms+'%':''}</div>
+        </div>
+        <div style="text-align:right;margin-left:10px;">
+          <div style="font-size:13px;font-weight:700;color:var(--primary);">${moeda(calcularPrecoFinal(p))}</div>
+          ${p.desconto>0?`<div style="font-size:10px;color:var(--success);">-${p.desconto}%</div>`:''}
+          ${p.acrescimo>0?`<div style="font-size:10px;color:var(--warning);">+${p.acrescimo}%</div>`:''}
+        </div>
+      </div>`).join('');
+  
+  // Botão de novo produto pré-selecionado
+  const btnNovo = document.getElementById('detalhes-marca-novo');
+  if (btnNovo) btnNovo.onclick = () => { fecharModal('modal-detalhes-marca'); novoProdutoMarca(indId); };
+  const btnImport = document.getElementById('detalhes-marca-import');
+  if (btnImport) btnImport.onclick = () => { fecharModal('modal-detalhes-marca'); abrirImportarProdutosExcelMarca(indId); };
+  
+  abrirModal('modal-detalhes-marca');
+}
+
+function novoProdutoMarca(indId) {
+  novoProduto();
+  // Pré-selecionar a indústria no modal de produto
+  setTimeout(() => {
+    const sel = document.getElementById('produto-industria');
+    if (sel) sel.value = indId;
+  }, 100);
+}
+
+function abrirImportarProdutosExcelMarca(indId) {
+  abrirImportarProdutosExcel();
+  // Pré-selecionar a indústria no importador
+  setTimeout(() => {
+    const sel = document.getElementById('imp-prod-industria');
+    if (sel) sel.value = indId;
+  }, 200);
+}
+
+function mostrarMenuProdutos(btn) {
+  const menu = document.getElementById('menu-mais-produtos');
+  if (!menu) return;
+  if (menu.style.display === 'block') { fecharMenuProdutos(); return; }
+  const rect = btn.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 6) + 'px';
+  menu.style.right = (window.innerWidth - rect.right) + 'px';
+  menu.style.left = 'auto';
+  menu.style.display = 'block';
+  setTimeout(() => document.addEventListener('click', _fecharMenuProdutosHandler), 10);
+}
+function fecharMenuProdutos() {
+  const menu = document.getElementById('menu-mais-produtos');
+  if (menu) menu.style.display = 'none';
+  document.removeEventListener('click', _fecharMenuProdutosHandler);
+}
+function _fecharMenuProdutosHandler(e) {
+  const menu = document.getElementById('menu-mais-produtos');
+  if (menu && !menu.contains(e.target)) fecharMenuProdutos();
 }
 
 function calcularPrecoFinal(p) {
@@ -4643,24 +4815,7 @@ function calcularPrecoFinal(p) {
 }
 
 function atualizarFiltroMarcas() {
-  const sel = document.getElementById('filtro-marca-produtos');
-  if (!sel) return;
-  const valorAtual = sel.value;
-  sel.innerHTML = '<option value="">Todas as marcas</option>';
-  const marcasUsadas = new Map();
-  STATE.produtos.forEach(p => {
-    if (p.industriaId && !marcasUsadas.has(p.industriaId)) {
-      const ind = STATE.industrias.find(i => i.id === p.industriaId);
-      if (ind) marcasUsadas.set(p.industriaId, ind.nome);
-    }
-  });
-  marcasUsadas.forEach((nome, id) => {
-    const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = nome;
-    sel.appendChild(opt);
-  });
-  sel.value = valorAtual;
+  // Mantido por compatibilidade (não mais usado na UI principal)
 }
 
 function toggleSelecionarProduto(id) {
@@ -4675,13 +4830,11 @@ function toggleSelecionarProduto(id) {
 
 function selecionarTodosProdutos() {
   const busca = (document.getElementById('search-produtos')?.value||'').toLowerCase();
-  const marcaFiltro = document.getElementById('filtro-marca-produtos')?.value || '';
   STATE.produtos.filter(p => {
-    const matchBusca = p.nome.toLowerCase().includes(busca) ||
+    if (!busca) return true;
+    return (p.nome||'').toLowerCase().includes(busca) ||
       (p.categoria||'').toLowerCase().includes(busca) ||
       (p.sku||'').toLowerCase().includes(busca);
-    const matchMarca = !marcaFiltro || p.industriaId === marcaFiltro;
-    return matchBusca && matchMarca;
   }).forEach(p => _produtosSelecionados.add(p.id));
   atualizarBarraSelecao();
   renderProdutos();
@@ -7444,7 +7597,7 @@ function abrirVincularFabrica() {
 function abrirVincularFabricaSelecionados() {
   // Pega os IDs já selecionados no modo de seleção múltipla
   _vincularModoSelecao = true;
-  _vincularPreSelecionados = Array.from(document.querySelectorAll('.produto-check:checked')).map(cb => cb.value);
+  _vincularPreSelecionados = Array.from(_produtosSelecionados);
   if (_vincularPreSelecionados.length === 0) { toast('Selecione ao menos um produto.'); return; }
   _popularVincularFabricaModal();
   abrirModal('modal-vincular-fabrica');
