@@ -3005,8 +3005,8 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
           <select class="form-control" id="imp-prod-col-preco"><option value="">— selecione —</option></select>
         </div>
         <div class="form-group" style="margin:0;">
-          <label class="form-label">IPI (%)</label>
-          <select class="form-control" id="imp-prod-col-ipi"><option value="">— selecione —</option></select>
+          <label class="form-label">ICMS (%)</label>
+          <select class="form-control" id="imp-prod-col-icms"><option value="">— selecione —</option></select>
         </div>
         <div class="form-group" style="margin:0;">
           <label class="form-label">Unidade</label>
@@ -3090,10 +3090,10 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
       <div class="form-group"><label class="form-label">Unidade</label><input type="text" class="form-control" id="produto-unidade" placeholder="UN / CX / KG"></div>
     </div>
     <div class="form-group"><label class="form-label">Descrição</label><textarea class="form-control" id="produto-desc" rows="2" placeholder="Descrição opcional..."></textarea></div>
-    <!-- Linha: Embalagem + IPI -->
+    <!-- Linha: Embalagem + ICMS -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group"><label class="form-label">Qtd. Embalagem</label><input type="number" class="form-control" id="produto-embalagem" placeholder="1" step="1" min="1" value="1"></div>
-      <div class="form-group"><label class="form-label">IPI (%)</label><input type="number" class="form-control" id="produto-ipi" placeholder="0,00" step="0.01" min="0" value="0"></div>
+      <div class="form-group"><label class="form-label">ICMS (%)</label><input type="number" class="form-control" id="produto-icms" placeholder="0,00" step="0.01" min="0" value="0"></div>
     </div>
     <!-- Linha: Desconto + Acréscimo individuais -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -4793,7 +4793,7 @@ function editarProduto(pid) {
   document.getElementById('produto-desc').value = p.descricao || '';
   // Novos campos
   if (document.getElementById('produto-embalagem')) document.getElementById('produto-embalagem').value = p.embalagem || 1;
-  if (document.getElementById('produto-ipi')) document.getElementById('produto-ipi').value = p.ipi || 0;
+  if (document.getElementById('produto-icms')) document.getElementById('produto-icms').value = p.icms || 0;
   if (document.getElementById('produto-desconto')) document.getElementById('produto-desconto').value = p.desconto || 0;
   if (document.getElementById('produto-acrescimo')) document.getElementById('produto-acrescimo').value = p.acrescimo || 0;
   if (document.getElementById('produto-comissao')) document.getElementById('produto-comissao').value = p.comissao || 0;
@@ -4819,7 +4819,7 @@ async function salvarProduto() {
   const editId      = document.getElementById('produto-edit-id').value;
   // Novos campos
   const embalagem   = parseFloat(document.getElementById('produto-embalagem')?.value) || 1;
-  const ipi         = parseFloat(document.getElementById('produto-ipi')?.value) || 0;
+  const icms        = parseFloat(document.getElementById('produto-icms')?.value) || 0;
   const desconto    = parseFloat(document.getElementById('produto-desconto')?.value) || 0;
   const acrescimo   = parseFloat(document.getElementById('produto-acrescimo')?.value) || 0;
   const comissao    = parseFloat(document.getElementById('produto-comissao')?.value) || 0;
@@ -4831,7 +4831,7 @@ async function salvarProduto() {
   if (!nome) { alert('Informe o nome do produto!'); return; }
   const data = {
     nome, categoria: cat, sku, medida, preco, unidade: unid, descricao: desc, industriaId,
-    embalagem, ipi, desconto, acrescimo, comissao,
+    embalagem, icms, desconto, acrescimo, comissao,
     descontos: { A: descA, B: descB, C: descC, D: descD }
   };
   if (editId) {
@@ -7177,7 +7177,7 @@ function impProdCarregarAba() {
   document.getElementById('imp-prod-rowcount').textContent = dataCount;
 
     // Preencher selects de colunas
-  const selIds = ['imp-prod-col-sku','imp-prod-col-nome','imp-prod-col-embalagem','imp-prod-col-preco','imp-prod-col-ipi','imp-prod-col-unidade','imp-prod-col-cat','imp-prod-col-medida','imp-prod-col-desc'];
+  const selIds = ['imp-prod-col-sku','imp-prod-col-nome','imp-prod-col-embalagem','imp-prod-col-preco','imp-prod-col-icms','imp-prod-col-unidade','imp-prod-col-cat','imp-prod-col-medida','imp-prod-col-desc'];
   selIds.forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
@@ -7195,7 +7195,7 @@ function impProdCarregarAba() {
     'imp-prod-col-nome':     ['nome','produto','descrição','descricao','name','item','desc'],
     'imp-prod-col-embalagem':['embalagem','emb','quant','qtd emb','qtd/emb','quantidade emb','quant. emb'],
     'imp-prod-col-preco':    ['preço liquido','preco liquido','preço líquido','preco','valor','price','vlr','vl','custo','preço unit'],
-    'imp-prod-col-ipi':      ['ipi','% ipi','ipi %'],
+    'imp-prod-col-icms':      ['icms','% icms','icms %','% icms','icms'],
     'imp-prod-col-unidade':  ['unidade','un','unid','unit','und','um'],
     'imp-prod-col-cat':      ['categoria','cat','grupo','family','familia','família','linha','classif'],
     'imp-prod-col-medida':   ['medida','tamanho','size','dimensão'],
@@ -7243,7 +7243,7 @@ async function impProdProcessar() {
   const colNome     = getCol('imp-prod-col-nome');
   const colEmb      = getCol('imp-prod-col-embalagem');
   const colPreco    = getCol('imp-prod-col-preco');
-  const colIpi      = getCol('imp-prod-col-ipi');
+  const colIcms      = getCol('imp-prod-col-icms');
   const colUnid     = getCol('imp-prod-col-unidade');
   const colCat      = getCol('imp-prod-col-cat');
   const colMedida   = getCol('imp-prod-col-medida');
@@ -7325,17 +7325,17 @@ async function impProdProcessar() {
     if (colEmb !== null) {
       embalagem = parseFloat(String(row[colEmb] || '1').replace(',', '.')) || 1;
     }
-    let ipi = 0;
-    if (colIpi !== null) {
-      const rawIpi = String(row[colIpi] || '0').replace(',', '.');
-      ipi = parseFloat(rawIpi) || 0;
-      // Se IPI for decimal (ex: 0.0325), converter para %
-      if (ipi > 0 && ipi < 1) ipi = ipi * 100;
+    let icms = 0;
+    if (colIcms !== null) {
+      const rawIcms = String(row[colIcms] || '0').replace(',', '.');
+      icms = parseFloat(rawIcms) || 0;
+      // Se ICMS for decimal (ex: 0.07), converter para %
+      if (icms > 0 && icms < 1) icms = icms * 100;
     }
     const dadosProduto = {
       nome: nome || sku, sku, preco, unidade: unid || 'UN',
       categoria: cat, medida, descricao: desc, industriaId,
-      embalagem, ipi,
+      embalagem, icms,
       desconto: descontoGeral, acrescimo: acrescimoGeral, comissao: comissaoGeral,
       descontos: { A: descA, B: descB, C: descC, D: 0 }
     };
