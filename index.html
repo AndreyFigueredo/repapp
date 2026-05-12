@@ -2973,6 +2973,18 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
           <span style="font-size:12px;color:var(--text-muted);">Os dados serão lidos a partir da linha seguinte</span>
         </div>
       </div>
+      <!-- Modo de importação -->
+      <div class="form-group">
+        <label class="form-label">Modo de Importação</label>
+        <select class="form-control" id="imp-prod-modo">
+          <option value="upsert">🔄 Atualizar existentes + Adicionar novos (recomendado)</option>
+          <option value="add">➕ Apenas adicionar novos (ignorar duplicatas)</option>
+          <option value="replace">🗑️ Substituir tudo desta marca (apaga e reimporta)</option>
+        </select>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+          O sistema identifica duplicatas pelo <strong>Código / SKU</strong>
+        </div>
+      </div>
       <!-- Mapeamento de colunas -->
       <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Mapeamento de Colunas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
@@ -7237,6 +7249,7 @@ async function impProdProcessar() {
   const colMedida   = getCol('imp-prod-col-medida');
   const colDesc     = getCol('imp-prod-col-desc');
   const industriaId = document.getElementById('imp-prod-industria').value || '';
+  const modo        = document.getElementById('imp-prod-modo')?.value || 'upsert';
   // Configurações globais de preço
   const descontoGeral  = getNum('imp-prod-desconto-geral');
   const acrescimoGeral = getNum('imp-prod-acrescimo-geral');
@@ -7245,15 +7258,55 @@ async function impProdProcessar() {
   const descB = getNum('imp-prod-desc-b');
   const descC = getNum('imp-prod-desc-c');
   if (colNome === null && colSku === null) { alert('Selecione ao menos a coluna de Código ou Descrição!'); return; }
-  const dataRows = impProdRows.slice(1).filter(row => row.some(c => String(c).trim() !== ''));
+
+  // Filtrar linhas válidas:
+  // - Deve ter algum valor em qualquer coluna
+  // - Se colSku definido, o valor deve ser numérico OU alfanumérico curto (não texto de categoria)
+  const dataRows = impProdRows.slice(1).filter(row => {
+    if (!row.some(c => String(c).trim() !== '')) return false;
+    if (colSku !== null) {
+      const skuVal = String(row[colSku] || '').trim();
+      if (!skuVal) return false;
+      // Ignorar linhas de categoria: texto longo com " - " (ex: "01 - CORTADORES MANUAIS")
+      if (skuVal.includes(' - ') && skuVal.length > 10) return false;
+      // Ignorar se o código tem mais de 30 caracteres (provavelmente texto de cabeçalho/categoria)
+      if (skuVal.length > 30) return false;
+    }
+    if (colNome !== null) {
+      const nomeVal = String(row[colNome] || '').trim();
+      // Ignorar linhas onde o nome é igual ao cabeçalho (ex: 'PRODUTO')
+      if (nomeVal.toUpperCase() === 'PRODUTO' || nomeVal.toUpperCase() === 'DESCRIÇÃO' || nomeVal.toUpperCase() === 'NOME') return false;
+    }
+    return true;
+  });
+
   // Mostrar passo 3
   document.getElementById('imp-prod-step2').style.display = 'none';
   document.getElementById('imp-prod-step3').style.display = 'block';
   const logEl = document.getElementById('imp-prod-log');
   logEl.innerHTML = '';
   const log = (msg) => { logEl.innerHTML += msg + '<br>'; logEl.scrollTop = logEl.scrollHeight; };
-  log(`🚀 Iniciando importação de ${dataRows.length} produtos...`);
-  let ok = 0, erros = 0, ignorados = 0;
+  log(`🚀 Iniciando importação de ${dataRows.length} produtos (modo: ${modo})...`);
+
+  // Se modo "replace": apagar todos os produtos desta indústria primeiro
+  if (modo === 'replace' && industriaId) {
+    log(`🗑️ Removendo produtos existentes da marca selecionada...`);
+    const prodsMarca = STATE.produtos.filter(p => p.industriaId === industriaId);
+    for (const p of prodsMarca) {
+      await deleteDoc_('produtos', p.id);
+    }
+    log(`✅ ${prodsMarca.length} produtos removidos. Reimportando...`);
+  }
+
+  // Construir mapa de SKU -> id dos produtos existentes para deduplicação
+  const skuMap = {};
+  if (modo === 'upsert' || modo === 'add') {
+    STATE.produtos.forEach(p => {
+      if (p.sku) skuMap[String(p.sku).trim().toLowerCase()] = p.id;
+    });
+  }
+
+  let ok = 0, atualizados = 0, ignorados = 0, erros = 0, categorias = 0;
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i];
     const sku  = colSku  !== null ? String(row[colSku]  || '').trim() : '';
@@ -7279,17 +7332,31 @@ async function impProdProcessar() {
       // Se IPI for decimal (ex: 0.0325), converter para %
       if (ipi > 0 && ipi < 1) ipi = ipi * 100;
     }
+    const dadosProduto = {
+      nome: nome || sku, sku, preco, unidade: unid || 'UN',
+      categoria: cat, medida, descricao: desc, industriaId,
+      embalagem, ipi,
+      desconto: descontoGeral, acrescimo: acrescimoGeral, comissao: comissaoGeral,
+      descontos: { A: descA, B: descB, C: descC, D: 0 }
+    };
     try {
-      await addDoc_('produtos', {
-        nome: nome || sku, sku, preco, unidade: unid || 'UN',
-        categoria: cat, medida, descricao: desc, industriaId,
-        embalagem, ipi,
-        desconto: descontoGeral, acrescimo: acrescimoGeral, comissao: comissaoGeral,
-        descontos: { A: descA, B: descB, C: descC, D: 0 }
-      });
-      ok++;
-      if ((i + 1) % 20 === 0 || i === dataRows.length - 1) {
-        log(`✅ ${ok} produtos importados...`);
+      const skuKey = sku.toLowerCase();
+      const existeId = skuMap[skuKey];
+      if (existeId && modo === 'upsert') {
+        // Atualizar produto existente
+        await updateDoc_('produtos', existeId, dadosProduto);
+        atualizados++;
+      } else if (existeId && modo === 'add') {
+        // Ignorar duplicata
+        ignorados++;
+      } else {
+        // Adicionar novo produto
+        const newId = await addDoc_('produtos', dadosProduto);
+        if (newId) skuMap[skuKey] = newId; // Registrar para evitar duplicar dentro da mesma importação
+        ok++;
+      }
+      if ((ok + atualizados) % 20 === 0 && (ok + atualizados) > 0) {
+        log(`✅ ${ok} novos | ${atualizados} atualizados...`);
       }
     } catch(err) {
       erros++;
@@ -7297,11 +7364,13 @@ async function impProdProcessar() {
     }
   }
   log('');
-  log(`✅ Concluído! ${ok} importados | ${ignorados} ignorados | ${erros} erros`);
+  log(`✅ Concluído! ${ok} novos | ${atualizados} atualizados | ${ignorados} ignorados | ${erros} erros`);
   document.getElementById('imp-prod-resumo').innerHTML = `
     <div style="font-size:28px;margin-bottom:6px;">🎉</div>
-    <div style="font-size:18px;font-weight:800;color:#16a34a;">${ok} produtos importados!</div>
-    ${ignorados > 0 ? `<div style="font-size:13px;color:#9ca3af;margin-top:4px;">${ignorados} linhas ignoradas (sem código/nome)</div>` : ''}
+    <div style="font-size:18px;font-weight:800;color:#16a34a;">${ok + atualizados} produtos processados!</div>
+    ${ok > 0 ? `<div style="font-size:13px;color:#16a34a;margin-top:4px;">✅ ${ok} novos adicionados</div>` : ''}
+    ${atualizados > 0 ? `<div style="font-size:13px;color:#2563eb;margin-top:4px;">🔄 ${atualizados} atualizados</div>` : ''}
+    ${ignorados > 0 ? `<div style="font-size:13px;color:#9ca3af;margin-top:4px;">${ignorados} ignorados (duplicatas ou sem código)</div>` : ''}
     ${erros > 0 ? `<div style="font-size:13px;color:#dc2626;margin-top:4px;">${erros} erros</div>` : ''}
   `;
 }
