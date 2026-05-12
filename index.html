@@ -3857,6 +3857,16 @@ function popularSelectIndustrias() {
   const opts = '<option value="">Selecionar...</option>' +
     STATE.industrias.map(i=>'<option value="'+i.id+'">'+i.nome+'</option>').join('');
   ['pedido-industria','orc-industria'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=opts; });
+  // Atualizar também o select do importador de produtos
+  const selImp = document.getElementById('imp-prod-industria');
+  if (selImp) {
+    const valAtual = selImp.value;
+    selImp.innerHTML = '<option value="">Sem vínculo</option>' +
+      STATE.industrias.map(i=>'<option value="'+i.id+'">'+i.nome+'</option>').join('');
+    selImp.value = valAtual;
+  }
+  // Atualizar select de produto-industria
+  popularSelectIndustriasProduto();
 }
 
 async function salvarPedido() {
@@ -7089,10 +7099,13 @@ function abrirImportarProdutosExcel() {
   document.getElementById('imp-prod-step3').style.display = 'none';
   document.getElementById('imp-prod-file').value = '';
 
-  // Carregar indústrias no select
+  // Carregar indústrias no select (usa STATE.industrias que é sempre atualizado pelo Firebase)
   const sel = document.getElementById('imp-prod-industria');
   sel.innerHTML = '<option value="">Sem vínculo</option>';
-  (window._industrias || []).forEach(ind => {
+  const fonteIndustrias = (STATE && STATE.industrias && STATE.industrias.length > 0)
+    ? STATE.industrias
+    : (window._industrias || []);
+  fonteIndustrias.forEach(ind => {
     const opt = document.createElement('option');
     opt.value = ind.id;
     opt.textContent = ind.nome || ind.id;
