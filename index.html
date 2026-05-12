@@ -297,8 +297,12 @@ body.dark .theme-toggle-btn:hover { color: #f59e0b; border-color: rgba(245,158,1
 /* =====================================================
    MAIN CONTENT
    ===================================================== */
-.app-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.main-content { flex: 1; padding: 28px 32px; padding-bottom: calc(var(--nav-height) + 24px); }
+.app-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; margin-left: var(--sidebar-w); }
+.main-content { flex: 1; padding: 28px 32px; padding-bottom: 32px; }
+@media (max-width: 767px) {
+  .app-wrapper { margin-left: 0 !important; }
+  .main-content { padding: 16px; padding-bottom: calc(var(--nav-height) + 20px); }
+}
 
 /* =====================================================
    SCREENS
