@@ -1491,6 +1491,9 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
         <button onclick="abrirImportarCatalogo()" style="flex:1;padding:10px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
           📄 Importar Catálogo PDF
         </button>
+        <button onclick="abrirImportarProdutosExcel()" style="flex:1;padding:10px;background:#16a34a;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          📊 Importar Excel/CSV
+        </button>
       </div>
       <div id="lista-produtos"></div>
     </div>
@@ -2194,6 +2197,100 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
 <div class="modal-overlay" id="modal-status-pedido"><div class="modal-sheet" id="modal-status-pedido-body"></div></div>
 
 <!-- MODAL: PRODUTO (add/edit) -->
+
+<!-- MODAL IMPORTAR PRODUTOS EXCEL/CSV -->
+<div class="modal-overlay" id="modal-import-produtos">
+  <div class="modal-sheet" style="max-height:95vh;">
+    <div class="modal-header">
+      <span class="modal-title">📊 Importar Produtos — Excel/CSV</span>
+      <button class="modal-close" onclick="fecharModal('modal-import-produtos')">✕</button>
+    </div>
+
+    <!-- PASSO 1: Upload -->
+    <div id="imp-prod-step1">
+      <div id="imp-prod-dropzone" onclick="document.getElementById('imp-prod-file').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+        ondragleave="this.style.borderColor='#d1d5db'"
+        ondrop="event.preventDefault();this.style.borderColor='#d1d5db';impProdHandleFile(event.dataTransfer.files[0])"
+        style="border:2px dashed #d1d5db;border-radius:16px;padding:32px 20px;text-align:center;cursor:pointer;background:#f9fafb;margin-bottom:16px;transition:border-color 0.2s;">
+        <div style="font-size:36px;margin-bottom:8px;">📊</div>
+        <div style="font-size:15px;font-weight:700;color:#374151;">Arraste ou clique para selecionar</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:4px;">XLS, XLSX ou CSV</div>
+      </div>
+      <input type="file" id="imp-prod-file" accept=".xls,.xlsx,.csv" style="display:none" onchange="impProdHandleFile(this.files[0])">
+    </div>
+
+    <!-- PASSO 2: Mapeamento de colunas -->
+    <div id="imp-prod-step2" style="display:none;">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#1d4ed8;">
+        📋 <strong id="imp-prod-filename">arquivo.xlsx</strong> — <span id="imp-prod-rowcount">0</span> linhas encontradas
+      </div>
+
+      <!-- Seletor de aba (se tiver múltiplas) -->
+      <div id="imp-prod-sheet-group" class="form-group" style="display:none;">
+        <label class="form-label">Aba da Planilha</label>
+        <select class="form-control" id="imp-prod-sheet" onchange="impProdCarregarAba()"></select>
+      </div>
+
+      <!-- Mapeamento de colunas -->
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Mapeamento de Colunas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Nome do Produto *</label>
+          <select class="form-control" id="imp-prod-col-nome"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">SKU / Código</label>
+          <select class="form-control" id="imp-prod-col-sku"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Preço</label>
+          <select class="form-control" id="imp-prod-col-preco"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Unidade</label>
+          <select class="form-control" id="imp-prod-col-unidade"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Categoria</label>
+          <select class="form-control" id="imp-prod-col-cat"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Medida / Embalagem</label>
+          <select class="form-control" id="imp-prod-col-medida"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;grid-column:1/-1;">
+          <label class="form-label">Descrição</label>
+          <select class="form-control" id="imp-prod-col-desc"><option value="">— selecione —</option></select>
+        </div>
+      </div>
+
+      <!-- Indústria -->
+      <div class="form-group">
+        <label class="form-label">🏭 Indústria / Marca (opcional)</label>
+        <select class="form-control" id="imp-prod-industria">
+          <option value="">Sem vínculo</option>
+        </select>
+      </div>
+
+      <!-- Preview -->
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Preview (primeiras 5 linhas)</div>
+      <div id="imp-prod-preview" style="overflow-x:auto;margin-bottom:16px;border:1px solid #e5e7eb;border-radius:12px;"></div>
+
+      <button class="btn-submit" onclick="impProdProcessar()" style="background:#16a34a;">
+        💾 Importar Produtos
+      </button>
+    </div>
+
+    <!-- PASSO 3: Resultado -->
+    <div id="imp-prod-step3" style="display:none;">
+      <div id="imp-prod-log" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;font-size:12px;font-family:monospace;max-height:300px;overflow-y:auto;margin-bottom:16px;"></div>
+      <div id="imp-prod-resumo" style="text-align:center;padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin-bottom:16px;"></div>
+      <button class="btn-submit" onclick="fecharModal('modal-import-produtos');renderProdutos()">✅ Concluir</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-produto">
   <div class="modal-sheet">
     <div class="modal-header"><span class="modal-title" id="modal-produto-title">🏷️ Novo Produto</span><button class="modal-close" onclick="fecharModal('modal-produto')">✕</button></div>
@@ -5936,6 +6033,200 @@ async function impGerarPedido() {
     toast('❌ Erro ao salvar pedido: ' + err.message);
   }
 }
+
+// =====================================================
+// IMPORTADOR DE PRODUTOS VIA EXCEL/CSV
+// =====================================================
+let impProdWorkbook = null;
+let impProdRows = [];
+
+function abrirImportarProdutosExcel() {
+  // Resetar estado
+  impProdWorkbook = null;
+  impProdRows = [];
+  document.getElementById('imp-prod-step1').style.display = 'block';
+  document.getElementById('imp-prod-step2').style.display = 'none';
+  document.getElementById('imp-prod-step3').style.display = 'none';
+  document.getElementById('imp-prod-file').value = '';
+
+  // Carregar indústrias no select
+  const sel = document.getElementById('imp-prod-industria');
+  sel.innerHTML = '<option value="">Sem vínculo</option>';
+  (window._industrias || []).forEach(ind => {
+    const opt = document.createElement('option');
+    opt.value = ind.id;
+    opt.textContent = ind.nome || ind.id;
+    sel.appendChild(opt);
+  });
+
+  abrirModal('modal-import-produtos');
+}
+
+function impProdHandleFile(file) {
+  if (!file) return;
+  if (!window.XLSX) { alert('Biblioteca XLSX não carregada. Aguarde e tente novamente.'); return; }
+
+  document.getElementById('imp-prod-filename').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      impProdWorkbook = XLSX.read(e.target.result, { type: 'array' });
+      const sheetNames = impProdWorkbook.SheetNames;
+      const sheetSel = document.getElementById('imp-prod-sheet');
+      sheetSel.innerHTML = '';
+      sheetNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sheetSel.appendChild(opt);
+      });
+      document.getElementById('imp-prod-sheet-group').style.display = sheetNames.length > 1 ? 'block' : 'none';
+      impProdCarregarAba();
+      document.getElementById('imp-prod-step1').style.display = 'none';
+      document.getElementById('imp-prod-step2').style.display = 'block';
+    } catch(err) {
+      alert('Erro ao ler o arquivo: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function impProdCarregarAba() {
+  if (!impProdWorkbook) return;
+  const sheetName = document.getElementById('imp-prod-sheet').value || impProdWorkbook.SheetNames[0];
+  const ws = impProdWorkbook.Sheets[sheetName];
+  impProdRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  if (impProdRows.length < 2) {
+    alert('Planilha vazia ou sem dados suficientes.');
+    return;
+  }
+
+  const headers = impProdRows[0].map(h => String(h).trim());
+  document.getElementById('imp-prod-rowcount').textContent = (impProdRows.length - 1);
+
+  // Preencher selects de colunas
+  const selIds = ['imp-prod-col-nome','imp-prod-col-sku','imp-prod-col-preco','imp-prod-col-unidade','imp-prod-col-cat','imp-prod-col-medida','imp-prod-col-desc'];
+  selIds.forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">— selecione —</option>';
+    headers.forEach((h, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = h || `Coluna ${i+1}`;
+      sel.appendChild(opt);
+    });
+  });
+
+  // Auto-detectar colunas pelo nome
+  const autoMap = {
+    'imp-prod-col-nome':    ['nome','produto','descrição','descricao','name','item','produto/serviço'],
+    'imp-prod-col-sku':     ['sku','código','codigo','ref','referencia','referência','cod','code','item'],
+    'imp-prod-col-preco':   ['preço','preco','valor','price','vlr','vl','custo'],
+    'imp-prod-col-unidade': ['unidade','un','unid','unit','und'],
+    'imp-prod-col-cat':     ['categoria','cat','grupo','family','familia','família','linha'],
+    'imp-prod-col-medida':  ['medida','embalagem','emb','tamanho','size','qtd emb','qtd/emb'],
+    'imp-prod-col-desc':    ['descricao','descrição','obs','observação','observacao','detalhe','detail'],
+  };
+
+  Object.entries(autoMap).forEach(([selId, keywords]) => {
+    const sel = document.getElementById(selId);
+    const idx = headers.findIndex(h => keywords.some(kw => h.toLowerCase().includes(kw)));
+    if (idx >= 0) sel.value = idx;
+  });
+
+  // Renderizar preview
+  impProdRenderPreview(headers);
+}
+
+function impProdRenderPreview(headers) {
+  const previewRows = impProdRows.slice(1, 6);
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+  html += '<tr style="background:#f3f4f6;">';
+  headers.forEach(h => { html += `<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e5e7eb;white-space:nowrap;color:#374151;font-weight:700;">${h}</th>`; });
+  html += '</tr>';
+  previewRows.forEach(row => {
+    html += '<tr>';
+    headers.forEach((_, i) => {
+      const val = String(row[i] || '').substring(0, 30);
+      html += `<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;color:#6b7280;white-space:nowrap;">${val}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('imp-prod-preview').innerHTML = html;
+}
+
+async function impProdProcessar() {
+  const getCol = (id) => {
+    const v = document.getElementById(id).value;
+    return v === '' ? null : parseInt(v);
+  };
+
+  const colNome   = getCol('imp-prod-col-nome');
+  const colSku    = getCol('imp-prod-col-sku');
+  const colPreco  = getCol('imp-prod-col-preco');
+  const colUnid   = getCol('imp-prod-col-unidade');
+  const colCat    = getCol('imp-prod-col-cat');
+  const colMedida = getCol('imp-prod-col-medida');
+  const colDesc   = getCol('imp-prod-col-desc');
+  const industriaId = document.getElementById('imp-prod-industria').value || '';
+
+  if (colNome === null) { alert('Selecione a coluna de Nome do Produto!'); return; }
+
+  const dataRows = impProdRows.slice(1).filter(row => row.some(c => String(c).trim() !== ''));
+
+  // Mostrar passo 3
+  document.getElementById('imp-prod-step2').style.display = 'none';
+  document.getElementById('imp-prod-step3').style.display = 'block';
+
+  const logEl = document.getElementById('imp-prod-log');
+  logEl.innerHTML = '';
+  const log = (msg) => { logEl.innerHTML += msg + '<br>'; logEl.scrollTop = logEl.scrollHeight; };
+
+  log(`🚀 Iniciando importação de ${dataRows.length} produtos...`);
+
+  let ok = 0, erros = 0, ignorados = 0;
+
+  for (let i = 0; i < dataRows.length; i++) {
+    const row = dataRows[i];
+    const nome = colNome !== null ? String(row[colNome] || '').trim() : '';
+    if (!nome) { ignorados++; continue; }
+
+    const sku    = colSku    !== null ? String(row[colSku]    || '').trim() : '';
+    const unid   = colUnid   !== null ? String(row[colUnid]   || '').trim() : 'UN';
+    const cat    = colCat    !== null ? String(row[colCat]    || '').trim() : '';
+    const medida = colMedida !== null ? String(row[colMedida] || '').trim() : '';
+    const desc   = colDesc   !== null ? String(row[colDesc]   || '').trim() : '';
+    let preco = 0;
+    if (colPreco !== null) {
+      const rawPreco = String(row[colPreco] || '').replace(/[^0-9.,]/g, '').replace(',', '.');
+      preco = parseFloat(rawPreco) || 0;
+    }
+
+    try {
+      await addDoc_('produtos', { nome, sku, preco, unidade: unid || 'UN', categoria: cat, medida, descricao: desc, industriaId });
+      ok++;
+      if ((i + 1) % 10 === 0 || i === dataRows.length - 1) {
+        log(`✅ ${ok} produtos importados...`);
+      }
+    } catch(err) {
+      erros++;
+      log(`❌ Linha ${i+2}: ${nome} — ${err.message}`);
+    }
+  }
+
+  log('');
+  log(`✅ Concluído! ${ok} importados | ${ignorados} ignorados | ${erros} erros`);
+
+  document.getElementById('imp-prod-resumo').innerHTML = `
+    <div style="font-size:28px;margin-bottom:6px;">🎉</div>
+    <div style="font-size:18px;font-weight:800;color:#16a34a;">${ok} produtos importados!</div>
+    ${ignorados > 0 ? `<div style="font-size:13px;color:#9ca3af;margin-top:4px;">${ignorados} linhas ignoradas (sem nome)</div>` : ''}
+    ${erros > 0 ? `<div style="font-size:13px;color:#dc2626;margin-top:4px;">${erros} erros</div>` : ''}
+  `;
+}
+
 </script>
 </body>
 </html>
