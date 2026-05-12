@@ -1359,8 +1359,46 @@ body.dark #toast { background: #e2e8f0; color: #0d1b2e; }
 .produto-info { flex: 1; min-width: 0; }
 .produto-nome { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
 .produto-sub  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* Produto card com checkbox e seleção */
+.produto-card.produto-selecionado {
+  background: var(--primary-pale);
+  border: 1.5px solid var(--primary);
+}
+.produto-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+.produto-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
 .produto-preco { font-size: 15px; font-weight: 800; color: var(--primary); white-space: nowrap; }
-body.dark .produto-preco { color: #7ab4f5; }
+body.dark 
+/* Produto card com checkbox e seleção */
+.produto-card.produto-selecionado {
+  background: var(--primary-pale);
+  border: 1.5px solid var(--primary);
+}
+.produto-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+.produto-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+.produto-preco { color: #7ab4f5; }
 .btn-add-prod {
   width: 30px; height: 30px; border-radius: 50%;
   background: var(--primary); color: white; border: none;
@@ -2157,14 +2195,38 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
 
     <!-- PRODUTOS -->
     <div class="screen" id="screen-produtos">
-      <div class="search-bar"><span>🔍</span><input type="text" class="search-input" placeholder="Buscar produto..." id="search-produtos" oninput="renderProdutos()"></div>
-      <div style="padding:0 16px 12px;display:flex;gap:8px;">
-        <button onclick="abrirImportarCatalogo()" style="flex:1;padding:10px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          📄 Importar Catálogo PDF
-        </button>
-        <button onclick="abrirImportarProdutosExcel()" style="flex:1;padding:10px;background:#16a34a;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+      <!-- Barra de busca + filtro por marca -->
+      <div style="padding:0 16px 10px;display:flex;gap:8px;align-items:center;">
+        <div class="search-bar" style="flex:1;margin:0;">
+          <span>🔍</span>
+          <input type="text" class="search-input" placeholder="Buscar produto..." id="search-produtos" oninput="renderProdutos()">
+        </div>
+        <select id="filtro-marca-produtos" class="form-control" style="width:auto;min-width:130px;padding:8px 10px;font-size:13px;" onchange="renderProdutos()">
+          <option value="">Todas as marcas</option>
+        </select>
+      </div>
+      <!-- Barra de ações -->
+      <div style="padding:0 16px 10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="abrirImportarProdutosExcel()" style="flex:1;min-width:140px;padding:10px;background:#16a34a;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
           📊 Importar Excel/CSV
         </button>
+        <button onclick="abrirImportarCatalogo()" style="flex:1;min-width:140px;padding:10px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          📄 Importar Catálogo PDF
+        </button>
+        <button onclick="abrirExcluirPorMarca()" style="flex:1;min-width:140px;padding:10px;background:var(--danger);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          🗑️ Excluir por Marca
+        </button>
+        <button onclick="ativarModoSelecao()" style="flex:1;min-width:140px;padding:10px;background:var(--warning);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          ☑️ Selecionar
+        </button>
+      </div>
+      <!-- Barra de seleção múltipla -->
+      <div id="barra-selecao-produtos" style="display:none;padding:8px 16px;background:var(--primary-pale);border-radius:10px;margin:0 16px 10px;display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span id="qtd-selecionados-produtos" style="font-size:13px;font-weight:700;color:var(--primary);">0 selecionados</span>
+        <button onclick="selecionarTodosProdutos()" style="padding:6px 12px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Selecionar Todos</button>
+        <button onclick="desmarcarTodosProdutos()" style="padding:6px 12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Desmarcar</button>
+        <button onclick="excluirProdutosSelecionados()" style="padding:6px 12px;background:var(--danger);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Excluir Selecionados</button>
+        <button onclick="fecharModoSelecao()" style="padding:6px 12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✕ Cancelar</button>
       </div>
       <div id="lista-produtos"></div>
     </div>
@@ -2903,36 +2965,64 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
         <select class="form-control" id="imp-prod-sheet" onchange="impProdCarregarAba()"></select>
       </div>
 
+      <!-- Linha de cabeçalho configurável -->
+      <div class="form-group">
+        <label class="form-label">Linha do Cabeçalho <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(linha com os nomes das colunas)</span></label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="number" class="form-control" id="imp-prod-linha-cabecalho" value="1" min="1" max="50" style="width:80px;" onchange="impProdCarregarAba()">
+          <span style="font-size:12px;color:var(--text-muted);">Os dados serão lidos a partir da linha seguinte</span>
+        </div>
+      </div>
       <!-- Mapeamento de colunas -->
       <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Mapeamento de Colunas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div class="form-group" style="margin:0;">
-          <label class="form-label">Nome do Produto *</label>
-          <select class="form-control" id="imp-prod-col-nome"><option value="">— selecione —</option></select>
-        </div>
-        <div class="form-group" style="margin:0;">
-          <label class="form-label">SKU / Código</label>
+          <label class="form-label">Código / SKU *</label>
           <select class="form-control" id="imp-prod-col-sku"><option value="">— selecione —</option></select>
         </div>
         <div class="form-group" style="margin:0;">
-          <label class="form-label">Preço</label>
+          <label class="form-label">Descrição / Nome *</label>
+          <select class="form-control" id="imp-prod-col-nome"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Qtd. Embalagem</label>
+          <select class="form-control" id="imp-prod-col-embalagem"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Preço Líquido</label>
           <select class="form-control" id="imp-prod-col-preco"><option value="">— selecione —</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">IPI (%)</label>
+          <select class="form-control" id="imp-prod-col-ipi"><option value="">— selecione —</option></select>
         </div>
         <div class="form-group" style="margin:0;">
           <label class="form-label">Unidade</label>
           <select class="form-control" id="imp-prod-col-unidade"><option value="">— selecione —</option></select>
         </div>
         <div class="form-group" style="margin:0;">
-          <label class="form-label">Categoria</label>
+          <label class="form-label">Categoria / Grupo</label>
           <select class="form-control" id="imp-prod-col-cat"><option value="">— selecione —</option></select>
         </div>
         <div class="form-group" style="margin:0;">
-          <label class="form-label">Medida / Embalagem</label>
+          <label class="form-label">Medida / Tamanho</label>
           <select class="form-control" id="imp-prod-col-medida"><option value="">— selecione —</option></select>
         </div>
         <div class="form-group" style="margin:0;grid-column:1/-1;">
-          <label class="form-label">Descrição</label>
+          <label class="form-label">Observação / Descrição extra</label>
           <select class="form-control" id="imp-prod-col-desc"><option value="">— selecione —</option></select>
+        </div>
+      </div>
+      <!-- Configurações de desconto e comissão na importação -->
+      <div style="background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">Configurações de Preço (aplicar a todos os produtos importados)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group" style="margin:0;"><label class="form-label">Desconto Geral (%)</label><input type="number" class="form-control" id="imp-prod-desconto-geral" placeholder="0" step="0.01" min="0" max="100" value="0"></div>
+          <div class="form-group" style="margin:0;"><label class="form-label">Acréscimo Geral (%)</label><input type="number" class="form-control" id="imp-prod-acrescimo-geral" placeholder="0" step="0.01" min="0" value="0"></div>
+          <div class="form-group" style="margin:0;"><label class="form-label">Comissão Vendedor (%)</label><input type="number" class="form-control" id="imp-prod-comissao-geral" placeholder="0" step="0.01" min="0" max="100" value="0"></div>
+          <div class="form-group" style="margin:0;"><label class="form-label">Desconto Cliente A (%)</label><input type="number" class="form-control" id="imp-prod-desc-a" placeholder="0" step="0.01" min="0" max="100" value="0"></div>
+          <div class="form-group" style="margin:0;"><label class="form-label">Desconto Cliente B (%)</label><input type="number" class="form-control" id="imp-prod-desc-b" placeholder="0" step="0.01" min="0" max="100" value="0"></div>
+          <div class="form-group" style="margin:0;"><label class="form-label">Desconto Cliente C (%)</label><input type="number" class="form-control" id="imp-prod-desc-c" placeholder="0" step="0.01" min="0" max="100" value="0"></div>
         </div>
       </div>
 
@@ -2988,11 +3078,52 @@ body.dark .form-check { background: #2a2f45 !important; border-color: rgba(255,2
       <div class="form-group"><label class="form-label">Unidade</label><input type="text" class="form-control" id="produto-unidade" placeholder="UN / CX / KG"></div>
     </div>
     <div class="form-group"><label class="form-label">Descrição</label><textarea class="form-control" id="produto-desc" rows="2" placeholder="Descrição opcional..."></textarea></div>
+    <!-- Linha: Embalagem + IPI -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label class="form-label">Qtd. Embalagem</label><input type="number" class="form-control" id="produto-embalagem" placeholder="1" step="1" min="1" value="1"></div>
+      <div class="form-group"><label class="form-label">IPI (%)</label><input type="number" class="form-control" id="produto-ipi" placeholder="0,00" step="0.01" min="0" value="0"></div>
+    </div>
+    <!-- Linha: Desconto + Acréscimo individuais -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label class="form-label">Desconto Individual (%)</label><input type="number" class="form-control" id="produto-desconto" placeholder="0,00" step="0.01" min="0" max="100" value="0"></div>
+      <div class="form-group"><label class="form-label">Acréscimo Individual (%)</label><input type="number" class="form-control" id="produto-acrescimo" placeholder="0,00" step="0.01" min="0" value="0"></div>
+    </div>
+    <!-- Comissão do vendedor -->
+    <div class="form-group"><label class="form-label">Comissão do Vendedor (%)</label><input type="number" class="form-control" id="produto-comissao" placeholder="0,00" step="0.01" min="0" max="100" value="0"></div>
+    <!-- Descontos por classificação de cliente -->
+    <div style="background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">Desconto por Classificação de Cliente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Cliente A (%)</label><input type="number" class="form-control" id="produto-desc-a" placeholder="0,00" step="0.01" min="0" max="100" value="0"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Cliente B (%)</label><input type="number" class="form-control" id="produto-desc-b" placeholder="0,00" step="0.01" min="0" max="100" value="0"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Cliente C (%)</label><input type="number" class="form-control" id="produto-desc-c" placeholder="0,00" step="0.01" min="0" max="100" value="0"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Cliente D (%)</label><input type="number" class="form-control" id="produto-desc-d" placeholder="0,00" step="0.01" min="0" max="100" value="0"></div>
+      </div>
+    </div>
     <button class="btn-submit" onclick="salvarProduto()">💾 Salvar Produto</button>
     <button class="btn-danger" id="btn-excluir-produto" style="display:none;" onclick="excluirProdutoEdit()">🗑️ Excluir Produto</button>
   </div>
 </div>
 
+
+<!-- MODAL: EXCLUIR PRODUTOS POR MARCA -->
+<div class="modal-overlay" id="modal-excluir-marca">
+  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <span class="modal-title">🗑️ Excluir Produtos por Marca</span>
+      <button class="modal-close" onclick="fecharModal('modal-excluir-marca')">✕</button>
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Selecione as marcas cujos produtos deseja excluir. Esta ação é irreversível.</div>
+    <!-- Lista de marcas com checkboxes -->
+    <div id="lista-marcas-excluir" style="margin-bottom:16px;max-height:350px;overflow-y:auto;"></div>
+    <!-- Resumo -->
+    <div id="resumo-excluir-marca" style="background:var(--danger-pale);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--danger);margin-bottom:14px;display:none;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="selecionarTodasMarcas()" style="flex:1;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Selecionar Todas</button>
+      <button onclick="confirmarExcluirMarcas()" style="flex:1;padding:10px;background:var(--danger);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">🗑️ Excluir Selecionadas</button>
+    </div>
+  </div>
+</div>
 <!-- MODAL: IMPORTAR CATÁLOGO PDF -->
 <div class="modal-overlay" id="modal-catalogo">
   <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
@@ -4383,13 +4514,22 @@ let itensPedidoAtual = [];
 // =====================================================
 // PRODUTOS — CRUD
 // =====================================================
+// Estado de seleção de produtos
+let _modoSelecaoProdutos = false;
+let _produtosSelecionados = new Set();
+
 function renderProdutos() {
   const busca = (document.getElementById('search-produtos')?.value||'').toLowerCase();
-  const filtrados = STATE.produtos.filter(p =>
-    p.nome.toLowerCase().includes(busca) ||
-    (p.categoria||'').toLowerCase().includes(busca) ||
-    (p.sku||'').toLowerCase().includes(busca)
-  );
+  const marcaFiltro = document.getElementById('filtro-marca-produtos')?.value || '';
+  // Atualizar select de marcas
+  atualizarFiltroMarcas();
+  const filtrados = STATE.produtos.filter(p => {
+    const matchBusca = p.nome.toLowerCase().includes(busca) ||
+      (p.categoria||'').toLowerCase().includes(busca) ||
+      (p.sku||'').toLowerCase().includes(busca);
+    const matchMarca = !marcaFiltro || p.industriaId === marcaFiltro;
+    return matchBusca && matchMarca;
+  });
   const lista = document.getElementById('lista-produtos');
   if (!lista) return;
   if (filtrados.length === 0) {
@@ -4398,16 +4538,200 @@ function renderProdutos() {
   }
   lista.innerHTML = filtrados.map(p => {
     const ind = STATE.industrias.find(i => i.id === p.industriaId);
+    const selecionado = _produtosSelecionados.has(p.id);
+    const precoFinal = calcularPrecoFinal(p);
     return `
-    <div class="produto-card" onclick="editarProduto('${p.id}')">
-      <div class="produto-icon">🏷️</div>
+    <div class="produto-card ${selecionado ? 'produto-selecionado' : ''}" onclick="${_modoSelecaoProdutos ? `toggleSelecionarProduto('${p.id}')` : `editarProduto('${p.id}')`}">
+      ${_modoSelecaoProdutos ? `<div class="produto-checkbox"><input type="checkbox" ${selecionado ? 'checked' : ''} onclick="event.stopPropagation();toggleSelecionarProduto('${p.id}')"></div>` : '<div class="produto-icon">🏷️</div>'}
       <div class="produto-info">
         <div class="produto-nome">${p.nome}</div>
         <div class="produto-sub">${ind?'🏭 '+ind.nome+' · ':''} ${p.categoria||'Sem categoria'}${p.sku?' · Ref: '+p.sku:''}</div>
+        ${p.embalagem > 1 ? `<div class="produto-sub" style="color:var(--primary)">📦 Emb: ${p.embalagem} un</div>` : ''}
       </div>
-      <div class="produto-preco">${moeda(p.preco)}</div>
+      <div style="text-align:right;">
+        <div class="produto-preco">${moeda(precoFinal)}</div>
+        ${p.desconto > 0 ? `<div style="font-size:10px;color:var(--success);">-${p.desconto}%</div>` : ''}
+        ${p.acrescimo > 0 ? `<div style="font-size:10px;color:var(--warning);">+${p.acrescimo}%</div>` : ''}
+      </div>
     </div>`;
   }).join('');
+}
+
+function calcularPrecoFinal(p) {
+  let preco = p.preco || 0;
+  if (p.acrescimo > 0) preco = preco * (1 + p.acrescimo / 100);
+  if (p.desconto > 0) preco = preco * (1 - p.desconto / 100);
+  return preco;
+}
+
+function atualizarFiltroMarcas() {
+  const sel = document.getElementById('filtro-marca-produtos');
+  if (!sel) return;
+  const valorAtual = sel.value;
+  sel.innerHTML = '<option value="">Todas as marcas</option>';
+  const marcasUsadas = new Map();
+  STATE.produtos.forEach(p => {
+    if (p.industriaId && !marcasUsadas.has(p.industriaId)) {
+      const ind = STATE.industrias.find(i => i.id === p.industriaId);
+      if (ind) marcasUsadas.set(p.industriaId, ind.nome);
+    }
+  });
+  marcasUsadas.forEach((nome, id) => {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = nome;
+    sel.appendChild(opt);
+  });
+  sel.value = valorAtual;
+}
+
+function toggleSelecionarProduto(id) {
+  if (_produtosSelecionados.has(id)) {
+    _produtosSelecionados.delete(id);
+  } else {
+    _produtosSelecionados.add(id);
+  }
+  atualizarBarraSelecao();
+  renderProdutos();
+}
+
+function selecionarTodosProdutos() {
+  const busca = (document.getElementById('search-produtos')?.value||'').toLowerCase();
+  const marcaFiltro = document.getElementById('filtro-marca-produtos')?.value || '';
+  STATE.produtos.filter(p => {
+    const matchBusca = p.nome.toLowerCase().includes(busca) ||
+      (p.categoria||'').toLowerCase().includes(busca) ||
+      (p.sku||'').toLowerCase().includes(busca);
+    const matchMarca = !marcaFiltro || p.industriaId === marcaFiltro;
+    return matchBusca && matchMarca;
+  }).forEach(p => _produtosSelecionados.add(p.id));
+  atualizarBarraSelecao();
+  renderProdutos();
+}
+
+function desmarcarTodosProdutos() {
+  _produtosSelecionados.clear();
+  atualizarBarraSelecao();
+  renderProdutos();
+}
+
+function atualizarBarraSelecao() {
+  const barra = document.getElementById('barra-selecao-produtos');
+  const qtd = document.getElementById('qtd-selecionados-produtos');
+  if (barra) {
+    barra.style.display = _modoSelecaoProdutos ? 'flex' : 'none';
+    if (qtd) qtd.textContent = `${_produtosSelecionados.size} selecionado${_produtosSelecionados.size !== 1 ? 's' : ''}`;
+  }
+}
+
+
+function ativarModoSelecao() {
+  _modoSelecaoProdutos = true;
+  _produtosSelecionados.clear();
+  atualizarBarraSelecao();
+  renderProdutos();
+}
+function fecharModoSelecao() {
+  _modoSelecaoProdutos = false;
+  _produtosSelecionados.clear();
+  atualizarBarraSelecao();
+  renderProdutos();
+}
+
+async function excluirProdutosSelecionados() {
+  if (_produtosSelecionados.size === 0) { toast('Nenhum produto selecionado.'); return; }
+  if (!confirm(`Excluir ${_produtosSelecionados.size} produto(s) selecionado(s)? Esta ação é irreversível.`)) return;
+  const ids = Array.from(_produtosSelecionados);
+  let ok = 0;
+  for (const id of ids) {
+    try { await deleteDoc_('produtos', id); ok++; } catch(e) {}
+  }
+  _produtosSelecionados.clear();
+  _modoSelecaoProdutos = false;
+  atualizarBarraSelecao();
+  toast(`🗑️ ${ok} produto(s) excluído(s)!`);
+}
+
+function abrirExcluirPorMarca() {
+  // Construir lista de marcas com contagem de produtos
+  const marcaMap = new Map();
+  STATE.produtos.forEach(p => {
+    if (p.industriaId) {
+      if (!marcaMap.has(p.industriaId)) marcaMap.set(p.industriaId, 0);
+      marcaMap.set(p.industriaId, marcaMap.get(p.industriaId) + 1);
+    }
+  });
+  const semMarca = STATE.produtos.filter(p => !p.industriaId).length;
+  const lista = document.getElementById('lista-marcas-excluir');
+  if (!lista) return;
+  let html = '';
+  if (semMarca > 0) {
+    html += `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--card);">
+      <input type="checkbox" class="marca-excluir-check" value="__sem_marca__" onchange="atualizarResumoExcluir()">
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:var(--text);">Sem Marca</div>
+        <div style="font-size:12px;color:var(--text-muted);">${semMarca} produto(s)</div>
+      </div>
+    </label>`;
+  }
+  marcaMap.forEach((count, id) => {
+    const ind = STATE.industrias.find(i => i.id === id);
+    const nome = ind ? ind.nome : id;
+    html += `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--card);">
+      <input type="checkbox" class="marca-excluir-check" value="${id}" onchange="atualizarResumoExcluir()">
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:var(--text);">🏭 ${nome}</div>
+        <div style="font-size:12px;color:var(--text-muted);">${count} produto(s)</div>
+      </div>
+    </label>`;
+  });
+  if (!html) html = '<div style="text-align:center;color:var(--text-muted);padding:20px;">Nenhum produto cadastrado.</div>';
+  lista.innerHTML = html;
+  document.getElementById('resumo-excluir-marca').style.display = 'none';
+  abrirModal('modal-excluir-marca');
+}
+
+function selecionarTodasMarcas() {
+  document.querySelectorAll('.marca-excluir-check').forEach(cb => cb.checked = true);
+  atualizarResumoExcluir();
+}
+
+function atualizarResumoExcluir() {
+  const selecionadas = Array.from(document.querySelectorAll('.marca-excluir-check:checked')).map(cb => cb.value);
+  const resumo = document.getElementById('resumo-excluir-marca');
+  if (selecionadas.length === 0) { resumo.style.display = 'none'; return; }
+  let total = 0;
+  selecionadas.forEach(id => {
+    if (id === '__sem_marca__') {
+      total += STATE.produtos.filter(p => !p.industriaId).length;
+    } else {
+      total += STATE.produtos.filter(p => p.industriaId === id).length;
+    }
+  });
+  resumo.style.display = 'block';
+  resumo.innerHTML = `⚠️ <strong>${total} produto(s)</strong> serão excluídos permanentemente.`;
+}
+
+async function confirmarExcluirMarcas() {
+  const selecionadas = Array.from(document.querySelectorAll('.marca-excluir-check:checked')).map(cb => cb.value);
+  if (selecionadas.length === 0) { toast('Selecione ao menos uma marca.'); return; }
+  let total = 0;
+  selecionadas.forEach(id => {
+    if (id === '__sem_marca__') total += STATE.produtos.filter(p => !p.industriaId).length;
+    else total += STATE.produtos.filter(p => p.industriaId === id).length;
+  });
+  if (!confirm(`Excluir ${total} produto(s) das marcas selecionadas? Esta ação é irreversível!`)) return;
+  let ok = 0;
+  for (const id of selecionadas) {
+    const prods = id === '__sem_marca__'
+      ? STATE.produtos.filter(p => !p.industriaId)
+      : STATE.produtos.filter(p => p.industriaId === id);
+    for (const p of prods) {
+      try { await deleteDoc_('produtos', p.id); ok++; } catch(e) {}
+    }
+  }
+  fecharModal('modal-excluir-marca');
+  toast(`🗑️ ${ok} produto(s) excluído(s)!`);
 }
 
 function popularSelectIndustriasProduto(selecionado='') {
@@ -4443,27 +4767,51 @@ function editarProduto(pid) {
   document.getElementById('produto-sku').value = p.sku || '';
   document.getElementById('produto-medida') && (document.getElementById('produto-medida').value = p.medida || '');
   document.getElementById('produto-preco').value = p.preco || '';
-  document.getElementById('produto-unidade').value = p.unidade || '';
+  document.getElementById('produto-unidade').value = p.unidade || 'UN';
   document.getElementById('produto-desc').value = p.descricao || '';
-  document.getElementById('btn-excluir-produto').style.display = 'block';
-  const bsEl = document.getElementById('catalogo-busca-status'); if(bsEl) bsEl.textContent = '';
-  const sgEl = document.getElementById('catalogo-sugestoes'); if(sgEl) { sgEl.innerHTML=''; sgEl.style.display='none'; }
+  // Novos campos
+  if (document.getElementById('produto-embalagem')) document.getElementById('produto-embalagem').value = p.embalagem || 1;
+  if (document.getElementById('produto-ipi')) document.getElementById('produto-ipi').value = p.ipi || 0;
+  if (document.getElementById('produto-desconto')) document.getElementById('produto-desconto').value = p.desconto || 0;
+  if (document.getElementById('produto-acrescimo')) document.getElementById('produto-acrescimo').value = p.acrescimo || 0;
+  if (document.getElementById('produto-comissao')) document.getElementById('produto-comissao').value = p.comissao || 0;
+  const descs = p.descontos || {};
+  if (document.getElementById('produto-desc-a')) document.getElementById('produto-desc-a').value = descs.A || 0;
+  if (document.getElementById('produto-desc-b')) document.getElementById('produto-desc-b').value = descs.B || 0;
+  if (document.getElementById('produto-desc-c')) document.getElementById('produto-desc-c').value = descs.C || 0;
+  if (document.getElementById('produto-desc-d')) document.getElementById('produto-desc-d').value = descs.D || 0;
   popularSelectIndustriasProduto(p.industriaId || '');
+  document.getElementById('btn-excluir-produto').style.display = 'block';
   abrirModal('modal-produto');
 }
 
 async function salvarProduto() {
-  const nome       = document.getElementById('produto-nome').value.trim();
-  const cat        = document.getElementById('produto-cat').value.trim();
-  const sku        = document.getElementById('produto-sku').value.trim();
-  const medida     = (document.getElementById('produto-medida') ? document.getElementById('produto-medida').value.trim() : '');
-  const preco      = parseFloat(document.getElementById('produto-preco').value) || 0;
-  const unid       = document.getElementById('produto-unidade').value.trim() || 'UN';
-  const desc       = document.getElementById('produto-desc').value.trim();
+  const nome        = document.getElementById('produto-nome').value.trim();
+  const cat         = document.getElementById('produto-cat').value.trim();
+  const sku         = document.getElementById('produto-sku').value.trim();
+  const medida      = (document.getElementById('produto-medida') ? document.getElementById('produto-medida').value.trim() : '');
+  const preco       = parseFloat(document.getElementById('produto-preco').value) || 0;
+  const unid        = document.getElementById('produto-unidade').value.trim() || 'UN';
+  const desc        = document.getElementById('produto-desc').value.trim();
   const industriaId = document.getElementById('produto-industria').value || '';
-  const editId     = document.getElementById('produto-edit-id').value;
+  const editId      = document.getElementById('produto-edit-id').value;
+  // Novos campos
+  const embalagem   = parseFloat(document.getElementById('produto-embalagem')?.value) || 1;
+  const ipi         = parseFloat(document.getElementById('produto-ipi')?.value) || 0;
+  const desconto    = parseFloat(document.getElementById('produto-desconto')?.value) || 0;
+  const acrescimo   = parseFloat(document.getElementById('produto-acrescimo')?.value) || 0;
+  const comissao    = parseFloat(document.getElementById('produto-comissao')?.value) || 0;
+  // Descontos por classificação de cliente
+  const descA = parseFloat(document.getElementById('produto-desc-a')?.value) || 0;
+  const descB = parseFloat(document.getElementById('produto-desc-b')?.value) || 0;
+  const descC = parseFloat(document.getElementById('produto-desc-c')?.value) || 0;
+  const descD = parseFloat(document.getElementById('produto-desc-d')?.value) || 0;
   if (!nome) { alert('Informe o nome do produto!'); return; }
-  const data = { nome, categoria: cat, sku, medida, preco, unidade: unid, descricao: desc, industriaId };
+  const data = {
+    nome, categoria: cat, sku, medida, preco, unidade: unid, descricao: desc, industriaId,
+    embalagem, ipi, desconto, acrescimo, comissao,
+    descontos: { A: descA, B: descB, C: descC, D: descD }
+  };
   if (editId) {
     await updateDoc_('produtos', editId, data);
     toast('✅ Produto atualizado!');
@@ -6787,20 +7135,27 @@ function impProdCarregarAba() {
   if (!impProdWorkbook) return;
   const sheetName = document.getElementById('imp-prod-sheet').value || impProdWorkbook.SheetNames[0];
   const ws = impProdWorkbook.Sheets[sheetName];
-  impProdRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  const allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-  if (impProdRows.length < 2) {
+  if (allRows.length < 2) {
     alert('Planilha vazia ou sem dados suficientes.');
     return;
   }
 
-  const headers = impProdRows[0].map(h => String(h).trim());
-  document.getElementById('imp-prod-rowcount').textContent = (impProdRows.length - 1);
+  // Linha de cabeçalho configurável (1-indexed)
+  const linhaCab = parseInt(document.getElementById('imp-prod-linha-cabecalho')?.value || '1') - 1;
+  const cabIdx = Math.max(0, Math.min(linhaCab, allRows.length - 2));
+  impProdRows = allRows.slice(cabIdx);
 
-  // Preencher selects de colunas
-  const selIds = ['imp-prod-col-nome','imp-prod-col-sku','imp-prod-col-preco','imp-prod-col-unidade','imp-prod-col-cat','imp-prod-col-medida','imp-prod-col-desc'];
+  const headers = impProdRows[0].map(h => String(h).trim());
+  const dataCount = impProdRows.slice(1).filter(row => row.some(c => String(c).trim() !== '')).length;
+  document.getElementById('imp-prod-rowcount').textContent = dataCount;
+
+    // Preencher selects de colunas
+  const selIds = ['imp-prod-col-sku','imp-prod-col-nome','imp-prod-col-embalagem','imp-prod-col-preco','imp-prod-col-ipi','imp-prod-col-unidade','imp-prod-col-cat','imp-prod-col-medida','imp-prod-col-desc'];
   selIds.forEach(id => {
     const sel = document.getElementById(id);
+    if (!sel) return;
     sel.innerHTML = '<option value="">— selecione —</option>';
     headers.forEach((h, i) => {
       const opt = document.createElement('option');
@@ -6809,36 +7164,38 @@ function impProdCarregarAba() {
       sel.appendChild(opt);
     });
   });
-
   // Auto-detectar colunas pelo nome
   const autoMap = {
-    'imp-prod-col-nome':    ['nome','produto','descrição','descricao','name','item','produto/serviço'],
-    'imp-prod-col-sku':     ['sku','código','codigo','ref','referencia','referência','cod','code','item'],
-    'imp-prod-col-preco':   ['preço','preco','valor','price','vlr','vl','custo'],
-    'imp-prod-col-unidade': ['unidade','un','unid','unit','und'],
-    'imp-prod-col-cat':     ['categoria','cat','grupo','family','familia','família','linha'],
-    'imp-prod-col-medida':  ['medida','embalagem','emb','tamanho','size','qtd emb','qtd/emb'],
-    'imp-prod-col-desc':    ['descricao','descrição','obs','observação','observacao','detalhe','detail'],
+    'imp-prod-col-sku':      ['sku','código','codigo','ref','referencia','referência','cod','code','cód','produto'],
+    'imp-prod-col-nome':     ['nome','produto','descrição','descricao','name','item','desc'],
+    'imp-prod-col-embalagem':['embalagem','emb','quant','qtd emb','qtd/emb','quantidade emb','quant. emb'],
+    'imp-prod-col-preco':    ['preço liquido','preco liquido','preço líquido','preco','valor','price','vlr','vl','custo','preço unit'],
+    'imp-prod-col-ipi':      ['ipi','% ipi','ipi %'],
+    'imp-prod-col-unidade':  ['unidade','un','unid','unit','und','um'],
+    'imp-prod-col-cat':      ['categoria','cat','grupo','family','familia','família','linha','classif'],
+    'imp-prod-col-medida':   ['medida','tamanho','size','dimensão'],
+    'imp-prod-col-desc':     ['obs','observação','observacao','detalhe','detail','ncm'],
   };
-
   Object.entries(autoMap).forEach(([selId, keywords]) => {
     const sel = document.getElementById(selId);
+    if (!sel) return;
     const idx = headers.findIndex(h => keywords.some(kw => h.toLowerCase().includes(kw)));
     if (idx >= 0) sel.value = idx;
   });
-
   // Renderizar preview
   impProdRenderPreview(headers);
 }
 
 function impProdRenderPreview(headers) {
-  const previewRows = impProdRows.slice(1, 6);
+  const previewRows = impProdRows.slice(1, 8); // Mostrar até 7 linhas de dados
   let html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
-  html += '<tr style="background:#f3f4f6;">';
-  headers.forEach(h => { html += `<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e5e7eb;white-space:nowrap;color:#374151;font-weight:700;">${h}</th>`; });
+  html += '<tr style="background:var(--primary);color:white;">';
+  headers.forEach((h, i) => {
+    html += `<th style="padding:6px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);white-space:nowrap;font-weight:700;" title="Coluna ${i+1}">${h || `Col.${i+1}`}</th>`;
+  });
   html += '</tr>';
-  previewRows.forEach(row => {
-    html += '<tr>';
+  previewRows.forEach((row, ri) => {
+    html += `<tr style="background:${ri%2===0?'var(--card)':'var(--bg2)'};">`;
     headers.forEach((_, i) => {
       const val = String(row[i] || '').substring(0, 30);
       html += `<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;color:#6b7280;white-space:nowrap;">${val}</td>`;
@@ -6851,41 +7208,44 @@ function impProdRenderPreview(headers) {
 
 async function impProdProcessar() {
   const getCol = (id) => {
-    const v = document.getElementById(id).value;
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const v = el.value;
     return v === '' ? null : parseInt(v);
   };
-
-  const colNome   = getCol('imp-prod-col-nome');
-  const colSku    = getCol('imp-prod-col-sku');
-  const colPreco  = getCol('imp-prod-col-preco');
-  const colUnid   = getCol('imp-prod-col-unidade');
-  const colCat    = getCol('imp-prod-col-cat');
-  const colMedida = getCol('imp-prod-col-medida');
-  const colDesc   = getCol('imp-prod-col-desc');
+  const getNum = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+  const colSku      = getCol('imp-prod-col-sku');
+  const colNome     = getCol('imp-prod-col-nome');
+  const colEmb      = getCol('imp-prod-col-embalagem');
+  const colPreco    = getCol('imp-prod-col-preco');
+  const colIpi      = getCol('imp-prod-col-ipi');
+  const colUnid     = getCol('imp-prod-col-unidade');
+  const colCat      = getCol('imp-prod-col-cat');
+  const colMedida   = getCol('imp-prod-col-medida');
+  const colDesc     = getCol('imp-prod-col-desc');
   const industriaId = document.getElementById('imp-prod-industria').value || '';
-
-  if (colNome === null) { alert('Selecione a coluna de Nome do Produto!'); return; }
-
+  // Configurações globais de preço
+  const descontoGeral  = getNum('imp-prod-desconto-geral');
+  const acrescimoGeral = getNum('imp-prod-acrescimo-geral');
+  const comissaoGeral  = getNum('imp-prod-comissao-geral');
+  const descA = getNum('imp-prod-desc-a');
+  const descB = getNum('imp-prod-desc-b');
+  const descC = getNum('imp-prod-desc-c');
+  if (colNome === null && colSku === null) { alert('Selecione ao menos a coluna de Código ou Descrição!'); return; }
   const dataRows = impProdRows.slice(1).filter(row => row.some(c => String(c).trim() !== ''));
-
   // Mostrar passo 3
   document.getElementById('imp-prod-step2').style.display = 'none';
   document.getElementById('imp-prod-step3').style.display = 'block';
-
   const logEl = document.getElementById('imp-prod-log');
   logEl.innerHTML = '';
   const log = (msg) => { logEl.innerHTML += msg + '<br>'; logEl.scrollTop = logEl.scrollHeight; };
-
   log(`🚀 Iniciando importação de ${dataRows.length} produtos...`);
-
   let ok = 0, erros = 0, ignorados = 0;
-
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i];
-    const nome = colNome !== null ? String(row[colNome] || '').trim() : '';
-    if (!nome) { ignorados++; continue; }
-
-    const sku    = colSku    !== null ? String(row[colSku]    || '').trim() : '';
+    const sku  = colSku  !== null ? String(row[colSku]  || '').trim() : '';
+    const nome = colNome !== null ? String(row[colNome] || '').trim() : sku;
+    if (!nome && !sku) { ignorados++; continue; }
     const unid   = colUnid   !== null ? String(row[colUnid]   || '').trim() : 'UN';
     const cat    = colCat    !== null ? String(row[colCat]    || '').trim() : '';
     const medida = colMedida !== null ? String(row[colMedida] || '').trim() : '';
@@ -6895,11 +7255,27 @@ async function impProdProcessar() {
       const rawPreco = String(row[colPreco] || '').replace(/[^0-9.,]/g, '').replace(',', '.');
       preco = parseFloat(rawPreco) || 0;
     }
-
+    let embalagem = 1;
+    if (colEmb !== null) {
+      embalagem = parseFloat(String(row[colEmb] || '1').replace(',', '.')) || 1;
+    }
+    let ipi = 0;
+    if (colIpi !== null) {
+      const rawIpi = String(row[colIpi] || '0').replace(',', '.');
+      ipi = parseFloat(rawIpi) || 0;
+      // Se IPI for decimal (ex: 0.0325), converter para %
+      if (ipi > 0 && ipi < 1) ipi = ipi * 100;
+    }
     try {
-      await addDoc_('produtos', { nome, sku, preco, unidade: unid || 'UN', categoria: cat, medida, descricao: desc, industriaId });
+      await addDoc_('produtos', {
+        nome: nome || sku, sku, preco, unidade: unid || 'UN',
+        categoria: cat, medida, descricao: desc, industriaId,
+        embalagem, ipi,
+        desconto: descontoGeral, acrescimo: acrescimoGeral, comissao: comissaoGeral,
+        descontos: { A: descA, B: descB, C: descC, D: 0 }
+      });
       ok++;
-      if ((i + 1) % 10 === 0 || i === dataRows.length - 1) {
+      if ((i + 1) % 20 === 0 || i === dataRows.length - 1) {
         log(`✅ ${ok} produtos importados...`);
       }
     } catch(err) {
@@ -6907,18 +7283,15 @@ async function impProdProcessar() {
       log(`❌ Linha ${i+2}: ${nome} — ${err.message}`);
     }
   }
-
   log('');
   log(`✅ Concluído! ${ok} importados | ${ignorados} ignorados | ${erros} erros`);
-
   document.getElementById('imp-prod-resumo').innerHTML = `
     <div style="font-size:28px;margin-bottom:6px;">🎉</div>
     <div style="font-size:18px;font-weight:800;color:#16a34a;">${ok} produtos importados!</div>
-    ${ignorados > 0 ? `<div style="font-size:13px;color:#9ca3af;margin-top:4px;">${ignorados} linhas ignoradas (sem nome)</div>` : ''}
+    ${ignorados > 0 ? `<div style="font-size:13px;color:#9ca3af;margin-top:4px;">${ignorados} linhas ignoradas (sem código/nome)</div>` : ''}
     ${erros > 0 ? `<div style="font-size:13px;color:#dc2626;margin-top:4px;">${erros} erros</div>` : ''}
   `;
 }
-
 </script>
 </body>
 </html>
